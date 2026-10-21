@@ -1,12 +1,12 @@
 # Tengerium
 
-Tengerium is an Android client for connecting to MSN Messenger-compatible services using the MSNP11 protocol. It brings classic Messenger-style presence and conversations to modern Android devices, with a Material Design interface.
+Tengerium is an Android client for connecting to MSN Messenger-compatible services (such as Escargot) using the MSNP11 protocol. It brings classic Messenger-style presence and conversations to modern Android devices, with a Material Design interface.
 
 > **Status:** This repository contains an Android Studio/Gradle project. The app is configured for Android 6.0 (API 23) and newer.
 
 ## Features
 
-- Sign in to an MSNP11-compatible service and manage your online status.
+- Sign in to an MSNP11-compatible service (e.g. Escargot) and manage your online status.
 - View contacts and presence, search the roster by name or account, and chat with individual contacts.
 - Manage contact requests, profile details, display pictures, and chat settings.
 - Receive message notifications and reply from notifications.
@@ -20,6 +20,7 @@ Feature availability depends on the server you connect to.
 - Android Studio with Android SDK platform 34 (as configured by the app module).
 - JDK 17.
 - An Android device or emulator running Android 6.0 (API 23) or newer.
+- An account on an MSNP11-compatible server (such as [Escargot](https://escargot.chat/)).
 
 ## Build and run
 
@@ -45,7 +46,7 @@ To run the available tests:
 
 ## Connecting
 
-On first launch, enter the account and connection details for an MSNP11-compatible service. Tengerium is a client; it does not provide Messenger accounts or host a messaging service. Check with your service provider for current server, authentication, and account requirements.
+On first launch, enter the account and connection details for an MSNP11-compatible service. Tengerium is a client; it does not provide Messenger accounts or host a messaging service. An **Escargot** account (or an account on a compatible MSNP11 service such as [Escargot](https://escargot.chat/)) is required to sign in and use the app. Check with your service provider for current server, authentication, and account requirements.
 
 ## Technology
 
