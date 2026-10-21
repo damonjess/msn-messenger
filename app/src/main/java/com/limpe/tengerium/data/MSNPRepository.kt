@@ -143,11 +143,11 @@ class MSNPRepository @Inject constructor(val context: Context) : MSNPProtocolLis
             // Network restored
             if (_loginState.value == MSNPLoginState.NoInternet) {
                 _loginState.value = MSNPLoginState.Idle
-                if (!userInitiatedLogout && getSavedAccount() != null && (securePrefs.autoSignIn || wasSessionActive)) {
+                if (!userInitiatedLogout && hasCredentials() && (securePrefs.autoSignIn || wasSessionActive)) {
                     Log.d(TAG, "Network restored, auto-logging in...")
                     autoLogin()
                 } else {
-                    Log.d(TAG, "Network restored, skipping auto-login (autoSignIn=${securePrefs.autoSignIn}, wasSessionActive=$wasSessionActive)")
+                    Log.d(TAG, "Network restored, skipping auto-login (autoSignIn=${securePrefs.autoSignIn}, wasSessionActive=$wasSessionActive, hasCredentials=${hasCredentials()})")
                 }
             }
         }
@@ -182,10 +182,17 @@ class MSNPRepository @Inject constructor(val context: Context) : MSNPProtocolLis
         performLoginDude(account, pass)
     }
 
-    fun autoLogin() {
-        val acc = securePrefs.getSavedAccount()
+    fun hasCredentials(): Boolean {
+        val acc = securePrefs.getSavedAccount() ?: sessionAccount
         val pwd = securePrefs.getSavedPassword()
-            ?: sessionPass?.takeIf { sessionAccount.equals(acc, ignoreCase = true) }
+            ?: sessionPass?.takeIf { sessionAccount == null || sessionAccount.equals(acc, ignoreCase = true) }
+        return !acc.isNullOrEmpty() && !pwd.isNullOrEmpty()
+    }
+
+    fun autoLogin() {
+        val acc = securePrefs.getSavedAccount() ?: sessionAccount
+        val pwd = securePrefs.getSavedPassword()
+            ?: sessionPass?.takeIf { sessionAccount == null || sessionAccount.equals(acc, ignoreCase = true) }
         if (acc != null && pwd != null) {
             Log.d(TAG, "Auto-login for $acc")
             performLoginDude(acc, pwd)
@@ -207,8 +214,8 @@ class MSNPRepository @Inject constructor(val context: Context) : MSNPProtocolLis
     }
 
     private fun startReconnectionLoop() {
-        if (userInitiatedLogout || !lastKnownNetworkState || getSavedAccount() == null) {
-            Log.d(TAG, "Reconnection loop skipped: userLogout=$userInitiatedLogout, hasNet=$lastKnownNetworkState, hasAcc=${getSavedAccount() != null}")
+        if (userInitiatedLogout || !lastKnownNetworkState || !hasCredentials()) {
+            Log.d(TAG, "Reconnection loop skipped: userLogout=$userInitiatedLogout, hasNet=$lastKnownNetworkState, hasAcc=${hasCredentials()}")
             return
         }
 
@@ -256,6 +263,7 @@ class MSNPRepository @Inject constructor(val context: Context) : MSNPProtocolLis
         wasSessionActive = false
         // An explicit sign-out turns off "Sign me in automatically" and drops the in-memory password.
         securePrefs.autoSignIn = false
+        sessionAccount = null
         sessionPass = null
         isReconnecting.set(false)
         reconnectAttempt.set(0)
@@ -638,8 +646,8 @@ class MSNPRepository @Inject constructor(val context: Context) : MSNPProtocolLis
             if (currentState is MSNPLoginState.Success || currentState is MSNPLoginState.Loading || currentState is MSNPLoginState.Reconnecting) {
                 _loginState.value = MSNPLoginState.Error("CONNECTION_LOST")
                 startReconnectionLoop()
-            } else if (currentState is MSNPLoginState.Idle && getSavedAccount() != null) {
-                // Если мы внезапно Idle, но есть аккаунт - пробуем переподключиться
+            } else if (currentState is MSNPLoginState.Idle && hasCredentials() && (securePrefs.autoSignIn || wasSessionActive)) {
+                // Если мы внезапно Idle, но есть активная сессия/креды - пробуем переподключиться
                 _loginState.value = MSNPLoginState.Error("DISCONNECTED_UNEXPECTEDLY")
                 startReconnectionLoop()
             }
