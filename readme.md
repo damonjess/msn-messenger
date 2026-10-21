@@ -1,5 +1,3 @@
-<img align="right" src="app/src/main/res/drawable/beta_tengerium_logo_n26.png" width="128" height="128">
-
 # Tengerium
 
 Tengerium is an Android client for connecting to MSN Messenger-compatible services using the MSNP11 protocol. It brings classic Messenger-style presence and conversations to modern Android devices, with a Material Design interface.
@@ -9,7 +7,7 @@ Tengerium is an Android client for connecting to MSN Messenger-compatible servic
 ## Features
 
 - Sign in to an MSNP11-compatible service and manage your online status.
-- View contacts and presence, and chat with individual contacts.
+- View contacts and presence, search the roster by name or account, and chat with individual contacts.
 - Manage contact requests, profile details, display pictures, and chat settings.
 - Receive message notifications and reply from notifications.
 - Store chat and app data locally, with encrypted database support.

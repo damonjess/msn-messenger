@@ -12,6 +12,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.PopupMenu
 import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
+import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
@@ -52,6 +53,7 @@ class ContactsFragment : Fragment() {
 
     private var isScrollRestored = false
     private val collapsedGroups = MutableStateFlow<Set<String>>(emptySet())
+    private val searchQuery = MutableStateFlow("")
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentContactsBinding.inflate(inflater, container, false)
@@ -111,7 +113,7 @@ class ContactsFragment : Fragment() {
         }
 
         binding.btnMsnSearchContact.setOnClickListener {
-            binding.rvContacts.smoothScrollToPosition(0)
+            showContactSearchDialog()
         }
 
         binding.btnMsnMore.setOnClickListener {
@@ -124,6 +126,24 @@ class ContactsFragment : Fragment() {
         }
     }
 
+    private fun showContactSearchDialog() {
+        val input = EditText(requireContext()).apply {
+            hint = "Name or email address"
+            setSingleLine(true)
+            setText(searchQuery.value)
+            setSelection(text.length)
+        }
+        input.addTextChangedListener { editable ->
+            searchQuery.value = editable?.toString()?.trim().orEmpty()
+        }
+        AlertDialog.Builder(requireContext())
+            .setTitle("Find a contact")
+            .setView(input)
+            .setPositiveButton(android.R.string.ok, null)
+            .setNeutralButton("Clear search") { _, _ -> searchQuery.value = "" }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
     private fun setupBanner() {
         val openAbout = {
             val mainFragment = findMainFragment()
@@ -296,9 +316,13 @@ class ContactsFragment : Fragment() {
                     repository.groups,
                     repository.pendingRequests,
                     repository.loginState,
-                    combine(collapsedGroups, securePrefs.prefsChangedFlow.onStart { emit("init") }) { c, _ -> c }
-                ) { contacts, groups, requests, loginState, collapsed ->
-                    buildItemList(contacts, groups, requests, loginState, collapsed)
+                    combine(
+                        collapsedGroups,
+                        securePrefs.prefsChangedFlow.onStart { emit("init") },
+                        searchQuery
+                    ) { collapsed, _, query -> collapsed to query }
+                ) { contacts, groups, requests, loginState, rosterState ->
+                    buildItemList(contacts, groups, requests, loginState, rosterState.first, rosterState.second)
                 }.collect { (items, requestsCount, isConnected) ->
                     val binding = _binding ?: return@collect
                     adapter.submitList(items) {
@@ -325,13 +349,20 @@ class ContactsFragment : Fragment() {
         groups: List<Group>,
         requests: List<Contact>,
         loginState: MSNPLoginState,
-        collapsed: Set<String>
+        collapsed: Set<String>,
+        query: String
     ): Triple<List<ContactAdapter.ContactItem>, Int, Boolean> {
         val items = mutableListOf<ContactAdapter.ContactItem>()
         val isConnected = loginState is MSNPLoginState.Success
         val myAcc = repository.getSavedAccount()?.lowercase(Locale.ROOT)?.trim()
         
-        val filteredContacts = contacts.filter { it.account.lowercase(Locale.ROOT).trim() != myAcc }
+        val normalizedQuery = query.trim().lowercase(Locale.ROOT)
+        val filteredContacts = contacts.filter { contact ->
+            contact.account.lowercase(Locale.ROOT).trim() != myAcc &&
+                (normalizedQuery.isEmpty() || contact.nickname.contains(normalizedQuery, ignoreCase = true) ||
+                    contact.account.contains(normalizedQuery, ignoreCase = true))
+        }
+        val collapsedForDisplay = if (normalizedQuery.isEmpty()) collapsed else emptySet()
         
         if (requests.isNotEmpty()) {
             val filteredRequests = requests.filter { it.account.lowercase(Locale.ROOT).trim() != myAcc }
@@ -349,7 +380,7 @@ class ContactsFragment : Fragment() {
                 val groupContacts = filteredContacts.filter { it.groupGuids.contains(group.guid) }
                 val onlineInGroup = groupContacts.filter { it.status != "FLN" && it.status != "HDN" && it.status != "OFFLINE" }.sortedBy { it.nickname.lowercase(Locale.ROOT) }
                 val offlineInGroup = groupContacts.filter { it.status == "FLN" || it.status == "HDN" || it.status == "OFFLINE" }.sortedBy { it.nickname.lowercase(Locale.ROOT) }
-                val isExpanded = !collapsed.contains(group.guid)
+                val isExpanded = !collapsedForDisplay.contains(group.guid)
                 
                 items.add(ContactAdapter.ContactItem.GroupHeader(group, onlineInGroup.size, groupContacts.size, isExpanded))
                 
@@ -373,7 +404,7 @@ class ContactsFragment : Fragment() {
         val offlineOther = remainingContacts.filter { it.status == "FLN" || it.status == "HDN" || it.status == "OFFLINE" }.sortedBy { it.nickname.lowercase(Locale.ROOT) }
 
         // Classic MSN Group 1: Online
-        val isOnlineExpanded = !collapsed.contains("online")
+        val isOnlineExpanded = !collapsedForDisplay.contains("online")
         items.add(ContactAdapter.ContactItem.GroupHeader(
             Group("online", "Online", emptyList()),
             onlineOther.size,
@@ -385,7 +416,7 @@ class ContactsFragment : Fragment() {
         }
 
         // Classic MSN Group 2: Not Online
-        val isOfflineExpanded = !collapsed.contains("not_online")
+        val isOfflineExpanded = !collapsedForDisplay.contains("not_online")
         items.add(ContactAdapter.ContactItem.GroupHeader(
             Group("not_online", "Not Online", emptyList()),
             0,
