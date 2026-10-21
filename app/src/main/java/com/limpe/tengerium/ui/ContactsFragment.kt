@@ -127,6 +127,7 @@ class ContactsFragment : Fragment() {
     }
 
     private fun showContactSearchDialog() {
+        val previousQuery = searchQuery.value
         val input = EditText(requireContext()).apply {
             hint = "Name or email address"
             setSingleLine(true)
@@ -141,7 +142,7 @@ class ContactsFragment : Fragment() {
             .setView(input)
             .setPositiveButton(android.R.string.ok, null)
             .setNeutralButton("Clear search") { _, _ -> searchQuery.value = "" }
-            .setNegativeButton(android.R.string.cancel, null)
+            .setNegativeButton(android.R.string.cancel) { _, _ -> searchQuery.value = previousQuery }
             .show()
     }
     private fun setupBanner() {
@@ -336,8 +337,20 @@ class ContactsFragment : Fragment() {
                         }
                         innerBinding.rvContacts.alpha = 1f
                     }
-                    val hasRealContacts = items.any { it is ContactAdapter.ContactItem.User || it is ContactAdapter.ContactItem.GroupHeader }
-                    binding.layoutEmpty.visibility = if (isConnected && !hasRealContacts && requestsCount <= 0) View.VISIBLE else View.GONE
+                    val hasContacts = items.any { item ->
+                        item is ContactAdapter.ContactItem.User ||
+                            (item is ContactAdapter.ContactItem.GroupHeader && item.totalCount > 0)
+                    }
+                    val searching = searchQuery.value.isNotBlank()
+                    val showEmpty = isConnected &&
+                        ((!hasContacts && searching) || (!hasContacts && !searching && requestsCount <= 0))
+                    binding.layoutEmpty.visibility = if (showEmpty) View.VISIBLE else View.GONE
+                    if (showEmpty) {
+                        val title = binding.layoutEmpty.getChildAt(0) as? android.widget.TextView
+                        val message = binding.layoutEmpty.getChildAt(1) as? android.widget.TextView
+                        title?.setText(if (searching) R.string.no_search_results_title else R.string.empty_contacts_title)
+                        message?.setText(if (searching) R.string.no_search_results_message else R.string.empty_contacts_message)
+                    }
                     binding.layoutNotConnected.visibility = if (!isConnected && !AppConfig.OFFCLIS) View.VISIBLE else View.GONE
                 }
             }

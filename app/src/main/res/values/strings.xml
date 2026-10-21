@@ -144,6 +144,8 @@
     <string name="show_online_first">Show online first</string>
     <string name="empty_contacts_title">It\'s quiet here...</string>
     <string name="empty_contacts_message">No contacts yet. Use the \"+\" button to add your first friend!</string>
+    <string name="no_search_results_title">No matching contacts</string>
+    <string name="no_search_results_message">Try another name or email address.</string>
     <string name="not_connected_message">You are not logged in.</string>
     <string name="contact_requests">Contact Requests</string>
     <string name="accept">Accept</string>
