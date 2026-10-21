@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Tengerium</string>
+    <string name="app_name">MSN Messenger</string>
     <string name="action_settings">Баптаулар</string>
     <string name="profile_title">Профиль</string>
     <string name="nickname_hint">Никнейм</string>

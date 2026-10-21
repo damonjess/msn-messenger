@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Tengerium</string>
+    <string name="app_name">MSN Messenger</string>
     <string name="action_settings">Ustawienia</string>
     <string name="profile_title">Profil</string>
     <string name="nickname_hint">Pseudonim</string>

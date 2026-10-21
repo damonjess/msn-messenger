@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="app_name">Tengerium</string>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="app_name">MSN Messenger</string>
     <string name="action_settings">Settings</string>
     <string name="profile_title">Profile</string>
     <string name="nickname_hint">Nickname</string>
@@ -153,6 +153,8 @@
     <string name="new_contact_request">%1$s wants to add you to their contacts</string>
     <string name="delete">Delete</string>
     <string name="no_requests">No pending requests</string>
+    <string name="pending_requests_count" tools:ignore="MissingTranslation">%1$d pending request(s)</string>
+    <string name="no_new_email_messages" tools:ignore="MissingTranslation">No new e-mail messages</string>
     <string name="search">Search</string>
     <string name="press_to_add">User found, press to add</string>
     <string name="invalid_email">Invalid email address</string>
@@ -215,7 +217,7 @@
     <string name="cache_label_size">Cache: %1$s</string>
     <string name="messages_label_size">History: %1$s</string>
     <string name="total_storage_usage">Total usage: %1$s</string>
-    <string name="tengerium_usage_format">Tengerium takes %1$d%% of apps cache volume</string>
+    <string name="tengerium_usage_format">MSN Messenger takes %1$d%% of apps cache volume</string>
     <string name="storage_profiles">Profiles Photos</string>
     <string name="storage_messages">Chat Logs</string>
     <string name="storage_avatars">Avatar Library</string>
@@ -262,17 +264,17 @@
     <string name="oobe_permissions_description">We need some permissions to provide the best experience.</string>
 
     <!-- WebView / External Links -->
-    <string name="leaving_app_title">You are leaving Tengerium</string>
+    <string name="leaving_app_title">You are leaving MSN Messenger</string>
     <string name="leaving_app_message">This link will take you to an external site:\n%1$s\n\nDo you want to continue?</string>
     <string name="leave">Leave</string>
     <string name="stay">Stay</string>
 
     <!-- Crash Report -->
     <string name="crash_title">Oops! An error occurred</string>
-    <string name="crash_message">Tengerium has crashed. We have collected technical information that will help us fix the problem.</string>
+    <string name="crash_message">MSN Messenger has crashed. We have collected technical information that will help us fix the problem.</string>
     <string name="restart">Restart</string>
     <string name="send_report">Send Report</string>
-    <string name="crash_report_subject">Tengerium Crash Report</string>
+    <string name="crash_report_subject">MSN Messenger Crash Report</string>
     <string name="send_report_via">Send report via...</string>
     <string name="no_trace_available">No trace available</string>
     <string name="crash_report_body_format">Device: %1$s\nAndroid: %2$s\n\n%3$s</string>

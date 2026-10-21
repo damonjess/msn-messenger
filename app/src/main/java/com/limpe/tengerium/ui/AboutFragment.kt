@@ -93,6 +93,7 @@ class AboutFragment : Fragment() {
 
     private fun setupAppInfo() {
         val context = requireContext()
+        binding.tvAppNameLarge.text = "MSN Messenger"
         val codeName = AppConfig.getCodeName(context)
         val branch = AppConfig.getBranch(context)
         val versionName = try {

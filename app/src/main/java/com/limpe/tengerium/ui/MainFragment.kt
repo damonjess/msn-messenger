@@ -154,6 +154,22 @@ class MainFragment : Fragment() {
                                 binding.ivMsnGreenBuddy?.isVisible = true
                                 binding.msnAvatarStatusView?.isVisible = false
                             }
+                        } else {
+                            val savedAcc = securePrefs.getSavedAccount()
+                            val nick = savedAcc?.let { securePrefs.getNickname(it)?.ifEmpty { it } ?: it }
+                            if (!nick.isNullOrEmpty()) {
+                                val statusRes = if (state is MSNPLoginState.Loading || state is MSNPLoginState.Reconnecting) {
+                                    R.string.status_trying_to_connect
+                                } else {
+                                    StatusUtils.getStatusStringRes(status)
+                                }
+                                val statusStr = getString(statusRes)
+                                binding.tvMsnUserDisplayName?.text = "$nick ($statusStr)"
+                            } else {
+                                binding.tvMsnUserDisplayName?.text = ""
+                            }
+                            binding.ivMsnGreenBuddy?.isVisible = true
+                            binding.msnAvatarStatusView?.isVisible = false
                         }
                     }
                 }
@@ -161,9 +177,9 @@ class MainFragment : Fragment() {
                 launch {
                     repository.pendingRequests.collectLatest { requests ->
                         if (requests.isNotEmpty()) {
-                            binding.tvMsnEmailStatus?.text = "${requests.size} pending request(s)"
+                            binding.tvMsnEmailStatus.text = getString(R.string.pending_requests_count, requests.size)
                         } else {
-                            binding.tvMsnEmailStatus?.text = "No new e-mail messages"
+                            binding.tvMsnEmailStatus.text = getString(R.string.no_new_email_messages)
                         }
                     }
                 }

@@ -15,7 +15,7 @@ object AppConfig {
     var enableAvatarLibrary: Boolean = true
 
     // Специальный режим LIMPE_EXP
-    const val LIMPE_EXP = true
+    const val LIMPE_EXP = false
 
     // Новый вид страницы входа
     var USENEWLOGINEXP: Boolean = true

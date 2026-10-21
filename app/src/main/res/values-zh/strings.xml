@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Tengerium</string>
+    <string name="app_name">MSN Messenger</string>
     <string name="action_settings">设置</string>
     <string name="profile_title">个人资料</string>
     <string name="nickname_hint">昵称</string>
