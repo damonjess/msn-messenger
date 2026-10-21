@@ -1,17 +1,26 @@
 # Tengerium
 
-Tengerium is an Android client for connecting to MSN Messenger-compatible services (such as Escargot) using the MSNP11 protocol. It brings classic Messenger-style presence and conversations to modern Android devices, with a Material Design interface.
+Tengerium is an Android client for connecting to MSN Messenger-compatible services (such as Escargot) using the MSNP11 protocol. It brings classic Messenger-style presence, conversations, and UI elements to modern Android devices with a Material Design interface.
 
 > **Status:** This repository contains an Android Studio/Gradle project. The app is configured for Android 6.0 (API 23) and newer.
 
 ## Features
 
-- Sign in to an MSNP11-compatible service (e.g. Escargot) and manage your online status.
-- View contacts and presence, search the roster by name or account, and chat with individual contacts.
-- Manage contact requests, profile details, display pictures, and chat settings.
-- Receive message notifications and reply from notifications.
-- Store chat and app data locally, with encrypted database support.
-- Customize the app's appearance and review data/storage and connection information.
+- **Authentication & Cascading Preferences:**
+  - Classic MSN sign-in checkbox chain (*Remember Me* → *Remember my Password* → *Sign me in automatically*).
+  - Secure credential storage and auto-login controls.
+  - Classic MSN XP blue title bar (`#1F59B1`) and responsive login layout.
+- **Messaging & Contacts:**
+  - View contacts, status presence, and avatar display pictures.
+  - Search roster by name or account, and chat with individual contacts.
+  - Send nudges with sound/vibration effects, link previews, and custom chat backgrounds.
+  - Manage contact requests, groups, and avatar libraries (*Change My Picture*).
+  - Sign-out confirmation dialogs and active session management.
+- **Built-in Mini-Game:**
+  - Single-player MSN-themed **Tic-Tac-Toe** against an AI opponent with score tracking (*You / Computer / Draws*).
+- **Notifications & Privacy:**
+  - In-app and system notifications with quick reply options.
+  - Local database storage with SQLCipher encryption.
 
 Feature availability depends on the server you connect to.
 

@@ -126,7 +126,9 @@ class SwipeBackLayout @JvmOverloads constructor(
         }
         try {
             dragHelper?.processTouchEvent(ev)
-        } catch (_: Exception) {}
+        } catch (e: Exception) {
+            android.util.Log.d("SwipeBackLayout", "processTouchEvent failed", e)
+        }
         return true
     }
 

@@ -40,7 +40,9 @@ class AboutFragment : Fragment() {
         binding.ivAppLogo.setOnClickListener {
             try {
                 findNavController().navigate(R.id.action_AboutFragment_to_UpdateFragment)
-            } catch (e: Exception) {}
+            } catch (e: Exception) {
+                android.util.Log.w("AboutFragment", "Could not open the update screen", e)
+            }
         }
 
         // Пасхалка на долгое нажатие всей верхней части
@@ -74,7 +76,9 @@ class AboutFragment : Fragment() {
         } else {
             try {
                 findNavController().navigate(R.id.EasterEggFragment)
-            } catch (e: Exception) {}
+            } catch (e: Exception) {
+                android.util.Log.w("AboutFragment", "Could not open the easter egg screen", e)
+            }
         }
     }
 

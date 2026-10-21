@@ -79,6 +79,9 @@ class MSNPRepository @Inject constructor(val context: Context) : MSNPProtocolLis
     var activeChatAccount: String? = null
     private var lastKnownNetworkState = true
     private var isCurrentSessionRemembered = false
+    // Kept in memory only, so a dropped connection can reconnect when the password isn't remembered.
+    private var sessionAccount: String? = null
+    private var sessionPass: String? = null
 
     init {
         // Наблюдаем за состоянием сети глобально
@@ -143,12 +146,25 @@ class MSNPRepository @Inject constructor(val context: Context) : MSNPProtocolLis
         }
     }
 
-    fun login(account: String, pass: String, remember: Boolean) {
+    fun login(
+        account: String,
+        pass: String,
+        remember: Boolean,
+        rememberPassword: Boolean = true,
+        autoSignIn: Boolean = true
+    ) {
         Log.d(TAG, "Manual login requested for $account")
         isCurrentSessionRemembered = remember
+        sessionAccount = account
+        sessionPass = pass
         if (remember) {
-            securePrefs.saveCredentials(account, pass)
+            securePrefs.saveCredentials(account, if (rememberPassword) pass else null)
+        } else {
+            // Unticking "Remember Me" must also forget any account saved earlier.
+            securePrefs.clearCredentials()
         }
+        securePrefs.rememberPassword = remember && rememberPassword
+        securePrefs.autoSignIn = remember && rememberPassword && autoSignIn
         userInitiatedLogout = false
         
         // Сбрасываем очередь переподключения при ручном входе
@@ -162,6 +178,7 @@ class MSNPRepository @Inject constructor(val context: Context) : MSNPProtocolLis
     fun autoLogin() {
         val acc = securePrefs.getSavedAccount()
         val pwd = securePrefs.getSavedPassword()
+            ?: sessionPass?.takeIf { sessionAccount.equals(acc, ignoreCase = true) }
         if (acc != null && pwd != null) {
             Log.d(TAG, "Auto-login for $acc")
             performLoginDude(acc, pwd)
@@ -229,6 +246,9 @@ class MSNPRepository @Inject constructor(val context: Context) : MSNPProtocolLis
     fun logout() {
         Log.d(TAG, "Logout requested")
         userInitiatedLogout = true
+        // An explicit sign-out turns off "Sign me in automatically" and drops the in-memory password.
+        securePrefs.autoSignIn = false
+        sessionPass = null
         isReconnecting.set(false)
         reconnectAttempt.set(0)
         reconnectJob?.cancel()

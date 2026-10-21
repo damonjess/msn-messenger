@@ -104,12 +104,7 @@ class ContactsFragment : Fragment() {
 
         binding.btnMsnPlayGame.setOnClickListener {
             SoundUtils.playSound(requireContext(), R.raw.nudge)
-            val mainFragment = findMainFragment()
-            if (mainFragment != null) {
-                mainFragment.showDetail(EasterEggFragment(), addToBackStack = true)
-            } else {
-                findNavController().navigate(R.id.EasterEggFragment)
-            }
+            TicTacToeDialog(requireContext()).show()
         }
 
         binding.btnMsnSearchContact.setOnClickListener {

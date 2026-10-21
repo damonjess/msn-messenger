@@ -16,8 +16,14 @@ class AuthViewModel(application: Application, private val repository: MSNPReposi
     fun getSavedAccount(): String? = repository.getSavedAccount()
     fun getSavedPassword(): String? = repository.getSavedPassword()
 
-    fun login(account: String, pass: String, rememberMe: Boolean = true) {
-        repository.login(account, pass, rememberMe)
+    fun login(
+        account: String,
+        pass: String,
+        rememberMe: Boolean = true,
+        rememberPassword: Boolean = true,
+        autoSignIn: Boolean = true
+    ) {
+        repository.login(account, pass, rememberMe, rememberPassword, autoSignIn)
     }
 
     fun logout() {

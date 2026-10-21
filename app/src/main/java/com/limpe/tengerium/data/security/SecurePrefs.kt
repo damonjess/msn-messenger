@@ -72,11 +72,11 @@ class SecurePrefs(private val context: Context) {
 
     fun getDatabasePassphrase(): String? = safeGet { encryptedPrefs.getString("db_passphrase", null) }
 
-    fun saveCredentials(account: String, pass: String) {
-        encryptedPrefs.edit()
-            .putString("saved_account", account)
-            .putString("saved_pass", pass)
-            .apply()
+    /** Saves the account; the password is saved only when [pass] is non-null, otherwise any stored one is removed. */
+    fun saveCredentials(account: String, pass: String?) {
+        val editor = encryptedPrefs.edit().putString("saved_account", account)
+        if (pass != null) editor.putString("saved_pass", pass) else editor.remove("saved_pass")
+        editor.apply()
     }
 
     fun getSavedAccount(): String? = safeGet { encryptedPrefs.getString("saved_account", null) }
@@ -242,6 +242,18 @@ class SecurePrefs(private val context: Context) {
     var rememberMe: Boolean
         get() = plainPrefs.getBoolean("remember_me", false)
         set(value) = plainPrefs.edit().putBoolean("remember_me", value).apply()
+
+    /** "Remember my Password". Existing users who already had a saved password keep it on. */
+    var rememberPassword: Boolean
+        get() = if (plainPrefs.contains("remember_password")) plainPrefs.getBoolean("remember_password", false)
+                else rememberMe && getSavedPassword() != null
+        set(value) = plainPrefs.edit().putBoolean("remember_password", value).apply()
+
+    /** "Sign me in automatically" (applies when the app starts). Existing users keep the old behaviour. */
+    var autoSignIn: Boolean
+        get() = if (plainPrefs.contains("auto_sign_in")) plainPrefs.getBoolean("auto_sign_in", false)
+                else rememberPassword
+        set(value) = plainPrefs.edit().putBoolean("auto_sign_in", value).apply()
 
     var disableMessageQueue: Boolean
         get() = plainPrefs.getBoolean("disable_message_queue", false)

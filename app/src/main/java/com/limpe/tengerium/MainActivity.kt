@@ -88,7 +88,7 @@ class MainActivity : AppCompatActivity() {
             val acc = securePrefs.getSavedAccount()
             val pwd = securePrefs.getSavedPassword()
             if (acc != null && pwd != null) {
-                repository.login(acc, pwd, true)
+                repository.login(acc, pwd, true, securePrefs.rememberPassword, securePrefs.autoSignIn)
             }
         }
 
@@ -109,7 +109,9 @@ class MainActivity : AppCompatActivity() {
                     navController.addOnDestinationChangedListener { _, _, _ ->
                         handleLoginStateDude(repository.loginState.value)
                     }
-                } catch (_: Exception) {}
+                } catch (e: Exception) {
+                    android.util.Log.w("MainActivity", "Could not attach destination listener", e)
+                }
             }
         }
 
@@ -156,7 +158,7 @@ class MainActivity : AppCompatActivity() {
         deepLinkHandler.handleIntent(intent)
         
         // Автоматический вход при запуске, если сохранены учетные данные
-        if (securePrefs.getSavedAccount() != null && repository.loginState.value is MSNPLoginState.Idle) {
+        if (securePrefs.autoSignIn && securePrefs.getSavedAccount() != null && repository.loginState.value is MSNPLoginState.Idle) {
             repository.autoLogin()
         }
 

@@ -61,7 +61,7 @@ class TengeriumApp : Application() {
         
         // Автоматический вход только если OOBE завершен для текущего аккаунта
         val savedAcc = securePrefs.getSavedAccount()
-        if (savedAcc != null && securePrefs.isOobeDone(savedAcc)) {
+        if (savedAcc != null && securePrefs.autoSignIn && securePrefs.isOobeDone(savedAcc)) {
             repository.autoLogin()
         }
     }

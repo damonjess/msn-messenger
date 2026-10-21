@@ -25,6 +25,7 @@ import com.limpe.tengerium.TengeriumApp
 import com.limpe.tengerium.data.AppConfig
 import com.limpe.tengerium.data.MSNPLoginState
 import com.limpe.tengerium.data.security.SecurePrefs
+import com.limpe.tengerium.ui.RememberCheckboxes
 import com.limpe.tengerium.databinding.FragmentAuthBinding
 import com.limpe.tengerium.databinding.FragmentOobeBinding
 import com.limpe.tengerium.databinding.FragmentOobeNicknameBinding
@@ -282,12 +283,15 @@ class OobeFragment : Fragment() {
                 authBinding.ivLogo?.setImageResource(AvatarUtils.getAppLogoResId(authBinding.root.context))
             }
             
-            val savedAccount = viewModel.getSavedAccount()
-            val savedPass = viewModel.getSavedPassword()
-            if (savedAccount != null && savedPass != null) {
-                authBinding.etAccount.setText(savedAccount)
-                authBinding.etPassword.setText(savedPass)
-                authBinding.cbRememberMe.isChecked = securePrefs.rememberMe
+            authBinding.cbRememberMe.isChecked = securePrefs.rememberMe
+            authBinding.cbRememberPassword.isChecked = securePrefs.rememberMe && securePrefs.rememberPassword
+            authBinding.cbAutoSignIn.isChecked = authBinding.cbRememberPassword.isChecked && securePrefs.autoSignIn
+            RememberCheckboxes.bind(authBinding.cbRememberMe, authBinding.cbRememberPassword, authBinding.cbAutoSignIn)
+            if (securePrefs.rememberMe) {
+                viewModel.getSavedAccount()?.let { authBinding.etAccount.setText(it) }
+                if (securePrefs.rememberPassword) {
+                    viewModel.getSavedPassword()?.let { authBinding.etPassword.setText(it) }
+                }
             }
 
             if (AppConfig.LIMPE_EXP) {
@@ -298,11 +302,14 @@ class OobeFragment : Fragment() {
                 val account = authBinding.etAccount.text.toString().trim()
                 val password = authBinding.etPassword.text.toString().trim()
                 val rememberMe = authBinding.cbRememberMe.isChecked
+                val rememberPassword = authBinding.cbRememberPassword.isChecked
+                val autoSignIn = authBinding.cbAutoSignIn.isChecked
                 
                 if (account.isNotEmpty() && password.isNotEmpty()) {
                     authBinding.tvError.visibility = View.GONE
                     hideKeyboard()
-                    viewModel.login(account, password, rememberMe)
+                    securePrefs.rememberMe = rememberMe
+                    viewModel.login(account, password, rememberMe, rememberPassword, autoSignIn)
                 } else {
                     Toast.makeText(requireContext(), R.string.fill_all_fields, Toast.LENGTH_SHORT).show()
                 }

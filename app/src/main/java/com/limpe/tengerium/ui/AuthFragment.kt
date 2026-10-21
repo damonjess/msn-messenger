@@ -66,6 +66,8 @@ class AuthFragment : Fragment() {
             val account = binding.etAccount.text.toString().trim()
             val password = binding.etPassword.text.toString().trim()
             val rememberMe = binding.cbRememberMe.isChecked
+            val rememberPassword = binding.cbRememberPassword.isChecked
+            val autoSignIn = binding.cbAutoSignIn.isChecked
 
             if (!validateInputs(account, password)) {
                 return@setOnClickListener
@@ -74,7 +76,7 @@ class AuthFragment : Fragment() {
             securePrefs.rememberMe = rememberMe
             binding.tvError.visibility = View.GONE
             
-            viewModel.login(account, password, rememberMe)
+            viewModel.login(account, password, rememberMe, rememberPassword, autoSignIn)
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
@@ -136,12 +138,13 @@ class AuthFragment : Fragment() {
         }
 
         binding.cbRememberMe.isChecked = securePrefs.rememberMe
+        binding.cbRememberPassword.isChecked = securePrefs.rememberMe && securePrefs.rememberPassword
+        binding.cbAutoSignIn.isChecked = binding.cbRememberPassword.isChecked && securePrefs.autoSignIn
+        RememberCheckboxes.bind(binding.cbRememberMe, binding.cbRememberPassword, binding.cbAutoSignIn)
         if (securePrefs.rememberMe) {
-            val savedAcc = viewModel.getSavedAccount()
-            val savedPass = viewModel.getSavedPassword()
-            if (savedAcc != null && savedPass != null) {
-                binding.etAccount.setText(savedAcc)
-                binding.etPassword.setText(savedPass)
+            viewModel.getSavedAccount()?.let { binding.etAccount.setText(it) }
+            if (securePrefs.rememberPassword) {
+                viewModel.getSavedPassword()?.let { binding.etPassword.setText(it) }
             }
         }
     }

@@ -17,6 +17,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.slidingpanelayout.widget.SlidingPaneLayout
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.tabs.TabLayoutMediator
 import com.limpe.tengerium.R
 import com.limpe.tengerium.TengeriumApp
@@ -118,8 +119,15 @@ class MainFragment : Fragment() {
             showDetail(ProfileFragment(), addToBackStack = true)
         }
         binding.btnMsnClose?.setOnClickListener {
-            repository.logout()
-            findNavController().navigate(R.id.AuthFragment)
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle("MSN Messenger")
+                .setMessage("Are you sure you want to sign out?")
+                .setPositiveButton(R.string.logout) { _, _ ->
+                    repository.logout()
+                    findNavController().navigate(R.id.AuthFragment)
+                }
+                .setNegativeButton(android.R.string.cancel, null)
+                .show()
         }
 
         setupMsnMenuBar(repository)

@@ -117,7 +117,7 @@
                     android:textSize="11sp" />
             </LinearLayout>
 
-            <!-- Send a File or Photo -->
+            <!-- Change My Picture (opens the avatar library) -->
             <LinearLayout
                 android:id="@+id/btnMsnSendFile"
                 android:layout_width="wrap_content"
@@ -136,7 +136,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="6dp"
-                    android:text="Send a File or Photo"
+                    android:text="Change My Picture"
                     android:textColor="#1F59B1"
                     android:textSize="11sp" />
             </LinearLayout>

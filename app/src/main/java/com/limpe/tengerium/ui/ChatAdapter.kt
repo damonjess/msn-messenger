@@ -217,7 +217,9 @@ class ChatAdapter(
                         try {
                             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
                             context.startActivity(intent)
-                        } catch (e: Exception) {}
+                        } catch (e: Exception) {
+                            android.util.Log.w("ChatAdapter", "Could not open link $url", e)
+                        }
                     }
                     
                     scope.launch {
