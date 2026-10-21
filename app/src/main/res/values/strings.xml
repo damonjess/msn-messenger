@@ -40,6 +40,25 @@
     <string name="theme">Theme</string>
 
     <!-- Auth -->
+    <string name="msn_messenger_title" translatable="false">MSN Messenger</string>
+    <string name="menu_file" translatable="false">File</string>
+    <string name="menu_contacts" translatable="false">Contacts</string>
+    <string name="menu_actions" translatable="false">Actions</string>
+    <string name="menu_tools" translatable="false">Tools</string>
+    <string name="menu_help" translatable="false">Help</string>
+    <string name="msn_prefix" translatable="false">msn</string>
+    <string name="messenger_suffix" translatable="false">Messenger</string>
+    <string name="email_address_label" translatable="false">E-mail address:</string>
+    <string name="password_label" translatable="false">Password:</string>
+    <string name="status_label" translatable="false">Status: </string>
+    <string name="status_online_dropdown" translatable="false">Online ▾</string>
+    <string name="remember_me_label" translatable="false">Remember Me</string>
+    <string name="remember_my_password_label" translatable="false">Remember my Password</string>
+    <string name="sign_me_in_automatically_label" translatable="false">Sign me in automatically</string>
+    <string name="forgot_password_link" translatable="false">Forgot your password?</string>
+    <string name="service_status_link" translatable="false">Service Status</string>
+    <string name="get_new_account_link" translatable="false">Get a new account</string>
+    <string name="microsoft_passport_network" translatable="false">Microsoft Passport Network</string>
     <string name="hotmail_account_hint">Hotmail Account</string>
     <string name="password_hint">Password</string>
     <string name="remember_me">Remember me</string>

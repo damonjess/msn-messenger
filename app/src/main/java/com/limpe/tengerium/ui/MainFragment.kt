@@ -15,53 +15,42 @@ import androidx.fragment.app.commitNow
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.fragment.findNavController
 import androidx.slidingpanelayout.widget.SlidingPaneLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import com.limpe.tengerium.R
 import com.limpe.tengerium.TengeriumApp
 import com.limpe.tengerium.data.MSNPLoginState
 import com.limpe.tengerium.data.MSNPRepository
+import com.limpe.tengerium.data.protocol.MSNPProto
 import com.limpe.tengerium.data.security.SecurePrefs
 import com.limpe.tengerium.databinding.FragmentMainWithTabsBinding
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
-/**
- * Основной фрагмент приложения.
- * Он рулит вкладками (контакты, чаты, профиль) и показывает детали (типа чатов)
- * через SlidingPaneLayout, чтобы на планшетах всё выглядело красиво.
- */
 class MainFragment : Fragment() {
 
-    // Тут держим наш биндинг
     private var _binding: FragmentMainWithTabsBinding? = null
-    // Удобная обертка, чтобы не писать лишние вопросики
     val binding get() = _binding!!
 
-    // Флаг, чтобы понимать, планшет у нас или обычный мобильник
     var isTablet: Boolean = false
         private set
 
-    // Хранилище для зашифрованных настроек
     private lateinit var securePrefs: SecurePrefs
-    // Адаптер для наших вкладок в ViewPager
     private var pagerAdapter: MainPagerAdapter? = null
-    // Штука, которая связывает TabLayout и ViewPager
     private var tabLayoutMediator: TabLayoutMediator? = null
 
-    // Надуваем макет фрагмента
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentMainWithTabsBinding.inflate(inflater, container, false)
         return binding.root
     }
 
-    // Когда вью создана, начинаем всё настраивать
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val repository = (requireActivity().application as TengeriumApp).repository
         securePrefs = SecurePrefs(requireContext())
         
-        // Убрали sliderFadeColor, так как он deprecated
         binding.slidingPaneLayout.lockMode = SlidingPaneLayout.LOCK_MODE_LOCKED_CLOSED
         
         val onBackPressedCallback = object : OnBackPressedCallback(false) {
@@ -79,7 +68,6 @@ class MainFragment : Fragment() {
             }
             override fun onPanelClosed(panel: View) {
                 onBackPressedCallback.isEnabled = false
-                // Когда закрыто - блокируем, чтобы не было случайных свайпов по пустоте
                 binding.slidingPaneLayout.lockMode = SlidingPaneLayout.LOCK_MODE_LOCKED_CLOSED
                 if (binding.slidingPaneLayout.isSlideable) {
                     clearTemporaryDetails()
@@ -97,6 +85,7 @@ class MainFragment : Fragment() {
         binding.viewPager.adapter = pagerAdapter
         setupTabs()
         applyDynamicDesign()
+        setupMsnHeaderAndSidebar(repository)
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -109,11 +98,204 @@ class MainFragment : Fragment() {
         observeUnreadCount(repository)
     }
 
+    private fun setupMsnHeaderAndSidebar(repository: MSNPRepository) {
+        binding.btnMsnStatusDropdown?.setOnClickListener { view ->
+            showMsnStatusMenu(view, repository)
+        }
+
+        binding.btnMsnEmailLink?.setOnClickListener {
+            showDetail(RequestsFragment(), addToBackStack = true)
+        }
+
+        binding.layoutMsnAvatarContainer?.setOnClickListener {
+            showDetail(ProfileFragment(), addToBackStack = true)
+        }
+
+        binding.btnMsnMinimize?.setOnClickListener {
+            requireActivity().moveTaskToBack(true)
+        }
+        binding.btnMsnMaximize?.setOnClickListener {
+            showDetail(ProfileFragment(), addToBackStack = true)
+        }
+        binding.btnMsnClose?.setOnClickListener {
+            repository.logout()
+            findNavController().navigate(R.id.AuthFragment)
+        }
+
+        setupMsnMenuBar(repository)
+        setupMsnSidebar()
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    combine(repository.loginState, repository.myStatus) { state, status ->
+                        Pair(state, status)
+                    }.collectLatest { (state, status) ->
+                        if (state is MSNPLoginState.Success) {
+                            val acc = state.account
+                            val nick = state.nickname.ifEmpty { securePrefs.getNickname(acc) ?: acc }
+                            val statusStr = getString(StatusUtils.getStatusStringRes(status))
+                            binding.tvMsnUserDisplayName?.text = "$nick ($statusStr)"
+
+                            if (!state.avatarUrl.isNullOrEmpty()) {
+                                binding.ivMsnGreenBuddy?.isVisible = false
+                                binding.msnAvatarStatusView?.isVisible = true
+                                binding.msnAvatarStatusView?.setAvatar(state.avatarUrl, acc)
+                                binding.msnAvatarStatusView?.setStatus(status)
+                            } else {
+                                binding.ivMsnGreenBuddy?.isVisible = true
+                                binding.msnAvatarStatusView?.isVisible = false
+                            }
+                        }
+                    }
+                }
+
+                launch {
+                    repository.pendingRequests.collectLatest { requests ->
+                        if (requests.isNotEmpty()) {
+                            binding.tvMsnEmailStatus?.text = "${requests.size} pending request(s)"
+                        } else {
+                            binding.tvMsnEmailStatus?.text = "No new e-mail messages"
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun showMsnStatusMenu(anchor: View, repository: MSNPRepository) {
+        val popup = androidx.appcompat.widget.PopupMenu(requireContext(), anchor)
+        val statuses = listOf(
+            getString(R.string.online) to MSNPProto.Status.ONLINE,
+            getString(R.string.busy) to MSNPProto.Status.BUSY,
+            getString(R.string.away) to MSNPProto.Status.AWAY,
+            getString(R.string.brb) to MSNPProto.Status.BRB,
+            getString(R.string.on_phone) to MSNPProto.Status.PHONE,
+            getString(R.string.out_to_lunch) to MSNPProto.Status.LUNCH,
+            getString(R.string.offline) to MSNPProto.Status.HIDDEN
+        )
+        statuses.forEachIndexed { index, (label, _) ->
+            popup.menu.add(0, index, index, label)
+        }
+        popup.setOnMenuItemClickListener { item ->
+            val status = statuses.getOrNull(item.itemId)?.second
+            if (status != null) {
+                repository.setStatus(status)
+            }
+            true
+        }
+        popup.show()
+    }
+
+    private fun setupMsnMenuBar(repository: MSNPRepository) {
+        binding.tvMenuFile?.setOnClickListener { view ->
+            val popup = androidx.appcompat.widget.PopupMenu(requireContext(), view)
+            popup.menu.add("My Profile")
+            popup.menu.add("Sign Out")
+            popup.setOnMenuItemClickListener { item ->
+                when (item.title) {
+                    "My Profile" -> showDetail(ProfileFragment(), addToBackStack = true)
+                    "Sign Out" -> {
+                        repository.logout()
+                        findNavController().navigate(R.id.AuthFragment)
+                    }
+                }
+                true
+            }
+            popup.show()
+        }
+
+        binding.tvMenuContacts?.setOnClickListener { view ->
+            val popup = androidx.appcompat.widget.PopupMenu(requireContext(), view)
+            popup.menu.add("Add a Contact")
+            popup.menu.add("Contact Requests")
+            popup.setOnMenuItemClickListener { item ->
+                when (item.title) {
+                    "Add a Contact" -> showDetail(AddContactFragment(), addToBackStack = true)
+                    "Contact Requests" -> showDetail(RequestsFragment(), addToBackStack = true)
+                }
+                true
+            }
+            popup.show()
+        }
+
+        binding.tvMenuActions?.setOnClickListener { view ->
+            val popup = androidx.appcompat.widget.PopupMenu(requireContext(), view)
+            popup.menu.add("Send Instant Message")
+            popup.menu.add("Change My Status")
+            popup.setOnMenuItemClickListener { item ->
+                when (item.title) {
+                    "Send Instant Message" -> binding.viewPager.currentItem = 1
+                    "Change My Status" -> showMsnStatusMenu(view, repository)
+                }
+                true
+            }
+            popup.show()
+        }
+
+        binding.tvMenuTools?.setOnClickListener { view ->
+            val popup = androidx.appcompat.widget.PopupMenu(requireContext(), view)
+            popup.menu.add("App Settings")
+            popup.menu.add("Data and Storage")
+            popup.menu.add("Avatar Library")
+            popup.setOnMenuItemClickListener { item ->
+                when (item.title) {
+                    "App Settings" -> showDetail(ChatSettingsFragment(), addToBackStack = true)
+                    "Data and Storage" -> showDetail(DataAndStorageFragment(), addToBackStack = true)
+                    "Avatar Library" -> showDetail(AvatarLibraryFragment(), addToBackStack = true)
+                }
+                true
+            }
+            popup.show()
+        }
+
+        binding.tvMenuHelp?.setOnClickListener { view ->
+            val popup = androidx.appcompat.widget.PopupMenu(requireContext(), view)
+            popup.menu.add("About MSN Messenger")
+            popup.menu.add("Check Services")
+            popup.setOnMenuItemClickListener { item ->
+                when (item.title) {
+                    "About MSN Messenger" -> showDetail(AboutFragment(), addToBackStack = true)
+                    "Check Services" -> showDetail(ServicesFragment(), addToBackStack = true)
+                }
+                true
+            }
+            popup.show()
+        }
+    }
+
+    private fun setupMsnSidebar() {
+        binding.btnSideBell?.setOnClickListener {
+            com.limpe.tengerium.util.SoundUtils.playSound(requireContext(), R.raw.nudge)
+        }
+        binding.btnSideSmiley?.setOnClickListener {
+            showDetail(AvatarLibraryFragment(), addToBackStack = true)
+        }
+        binding.btnSideGraph?.setOnClickListener {
+            showDetail(TrafficUsageFragment(), addToBackStack = true)
+        }
+        binding.btnSidePlane?.setOnClickListener {
+            showDetail(ServicesFragment(), addToBackStack = true)
+        }
+        binding.btnSideCar?.setOnClickListener {
+            showDetail(MemoryUsageFragment(), addToBackStack = true)
+        }
+        binding.btnSideBag?.setOnClickListener {
+            showDetail(DataAndStorageFragment(), addToBackStack = true)
+        }
+        binding.btnSideGlass?.setOnClickListener {
+            showDetail(ChatSettingsFragment(), addToBackStack = true)
+        }
+        binding.btnSideLogo?.setOnClickListener {
+            showDetail(AboutFragment(), addToBackStack = true)
+        }
+    }
+
     private fun observeUnreadCount(repository: MSNPRepository) {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 repository.getUnreadChatsCount().collectLatest { count ->
-                    updateTabBadge(1, count) // 1 - индекс вкладки чатов
+                    updateTabBadge(1, count)
                 }
             }
         }
@@ -133,7 +315,6 @@ class MainFragment : Fragment() {
         }
     }
 
-    // Решаем, когда можно свайпать панель, а когда она должна стоять мертво
     private fun updateSlidingPaneLockMode() {
         if (!binding.slidingPaneLayout.isSlideable) return
         
@@ -142,26 +323,20 @@ class MainFragment : Fragment() {
 
         binding.slidingPaneLayout.lockMode = when {
             !hasDetail -> SlidingPaneLayout.LOCK_MODE_LOCKED_CLOSED
-            hasBackStack -> SlidingPaneLayout.LOCK_MODE_LOCKED_OPEN // Блокируем в открытом виде, если есть внутренний стек
-            else -> SlidingPaneLayout.LOCK_MODE_UNLOCKED // РАЗБЛОКИРУЕМ для бесшовного свайпа SlidingPaneLayout
+            hasBackStack -> SlidingPaneLayout.LOCK_MODE_LOCKED_OPEN
+            else -> SlidingPaneLayout.LOCK_MODE_UNLOCKED
         }
     }
 
-    // Подметаем за собой детали на телефонах, чтобы ничего не наслаивалось
     private fun clearTemporaryDetails() {
-        // На мобильных устройствах при закрытии панели всегда очищаем детали,
-        // чтобы предотвратить "наслоение" фрагментов при следующем открытии.
         val current = childFragmentManager.findFragmentById(R.id.detail_container)
         if (current != null) {
             clearAllDetails()
         }
     }
 
-    // Показываем какой-нибудь детальный экран (например, чат с кем-то)
     fun showDetail(fragment: Fragment, addToBackStack: Boolean = false) {
         val currentFragment = childFragmentManager.findFragmentById(R.id.detail_container)
-        // Если это первый фрагмент в контейнере деталей, не добавляем его в BackStack,
-        // чтобы следующее действие "назад" или свайп сразу закрывали панель, а не переходили к пустому экрану.
         val shouldAddToBackStack = addToBackStack && currentFragment != null
 
         childFragmentManager.commit {
@@ -186,14 +361,11 @@ class MainFragment : Fragment() {
         updateSlidingPaneLockMode()
     }
 
-    // Пытаемся закрыть деталь или уйти назад по стеку
     fun closeDetail() {
         if (childFragmentManager.backStackEntryCount > 0) {
             childFragmentManager.popBackStackImmediate()
             updateSlidingPaneLockMode()
             
-            // Если после поп-бэкстека контейнер оказался пустым, значит мы вернулись в "пустое" состояние.
-            // На мобильных устройствах в этом случае нужно закрыть панель.
             if (childFragmentManager.findFragmentById(R.id.detail_container) == null && binding.slidingPaneLayout.isSlideable) {
                 binding.slidingPaneLayout.closePane()
             }
@@ -205,7 +377,6 @@ class MainFragment : Fragment() {
         }
     }
 
-    // Вычищаем всё из контейнера деталей под ноль
     fun clearAllDetails() {
         childFragmentManager.commitNow {
             while(childFragmentManager.backStackEntryCount > 0) {
@@ -217,7 +388,6 @@ class MainFragment : Fragment() {
         updateSlidingPaneLockMode()
     }
 
-    // Открываем чат специально в режиме планшета (справа)
     fun openChatOnTablet(account: String) {
         val fragment = ChatFragment().apply {
             arguments = bundleOf("account" to account)
@@ -235,13 +405,11 @@ class MainFragment : Fragment() {
         updateSlidingPaneLockMode()
     }
 
-    // Обновляем статус подключения в тулбаре
     private fun updateConnectionStatus(isConnecting: Boolean) {
         val statusView = binding.toolbarLayout?.root?.findViewById<TextView>(R.id.tvToolbarStatus) ?: return
         statusView.isVisible = isConnecting
     }
 
-    // Настраиваем вкладки и их заголовки
     private fun setupTabs() {
         tabLayoutMediator?.detach()
         tabLayoutMediator = TabLayoutMediator(binding.tabLayout, binding.viewPager) { tab, position ->
@@ -252,16 +420,13 @@ class MainFragment : Fragment() {
         tabLayoutMediator?.attach()
     }
 
-    // Наводим марафет: подкрашиваем тулбары и табы в цвет фона
     private fun applyDynamicDesign() {
-        // Явно указываем material R, чтобы избежать путаницы с локальными ресурсами
         val surfaceColor = com.google.android.material.color.MaterialColors.getColor(requireContext(), com.google.android.material.R.attr.colorSurface, Color.WHITE)
-        binding.appBarLayout.setBackgroundColor(surfaceColor)
+        binding.appBarLayout.setBackgroundColor(Color.parseColor("#DCE6F7"))
         binding.mainToolbar.setBackgroundColor(surfaceColor)
-        binding.tabLayout.setBackgroundColor(surfaceColor)
+        binding.tabLayout.setBackgroundColor(Color.parseColor("#DCE6F7"))
     }
 
-    // Маленький помощник для переключения фрагментов во вкладках
     private class MainPagerAdapter(fragment: Fragment) : androidx.viewpager2.adapter.FragmentStateAdapter(fragment) {
         override fun getItemCount(): Int = 3
         override fun createFragment(position: Int): Fragment {
@@ -273,7 +438,6 @@ class MainFragment : Fragment() {
         }
     }
 
-    // Прибираемся, когда вью фрагмента уничтожается
     override fun onDestroyView() {
         super.onDestroyView()
         tabLayoutMediator?.detach()

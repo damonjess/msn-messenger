@@ -34,7 +34,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import java.util.Calendar
 import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
@@ -312,18 +311,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun checkTimeBomb(): Boolean {
-        val bombDate = Calendar.getInstance().apply {
-            set(2026, Calendar.AUGUST, 10, 0, 0, 0)
-        }
-        if (System.currentTimeMillis() >= bombDate.timeInMillis) {
-            AlertDialog.Builder(this)
-                .setTitle(R.string.app_expired_title)
-                .setMessage(R.string.app_expired_message)
-                .setCancelable(false)
-                .setPositiveButton(R.string.update) { _, _ -> }
-                .show()
-            return true
-        }
         return false
     }
 

@@ -1,64 +1,395 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.slidingpanelayout.widget.SlidingPaneLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/slidingPaneLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- Левая панель: Табы (Контакты, Чаты, Профиль) -->
+    <!-- Left Panel: MSN Messenger Window -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/leftPanel"
-        android:layout_width="320dp"
+        android:layout_width="340dp"
         android:layout_height="match_parent"
-        android:layout_weight="1">
+        android:layout_weight="1"
+        android:background="#DCE6F7">
 
-        <com.google.android.material.appbar.AppBarLayout
-            android:id="@+id/appBarLayout"
+        <!-- 1. Window Title Bar (Classic Windows XP / MSN Blue) -->
+        <LinearLayout
+            android:id="@+id/msnTitleBar"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="?attr/colorSurface"
-            app:elevation="0dp"
+            android:layout_height="30dp"
+            android:background="#1F59B1"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="8dp"
             app:layout_constraintTop_toTopOf="parent">
 
-            <com.google.android.material.appbar.MaterialToolbar
-                android:id="@+id/mainToolbar"
-                android:layout_width="match_parent"
-                android:layout_height="?attr/actionBarSize"
-                app:contentInsetStart="0dp"
-                app:contentInsetStartWithNavigation="0dp"
-                app:titleTextColor="?attr/colorOnSurface">
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_msn_butterfly_small" />
 
-                <include
-                    android:id="@+id/toolbarLayout"
-                    layout="@layout/view_toolbar_title" />
-
-            </com.google.android.material.appbar.MaterialToolbar>
-
-            <com.google.android.material.tabs.TabLayout
-                android:id="@+id/tabLayout"
-                android:layout_width="match_parent"
+            <TextView
+                android:id="@+id/tvMsnWindowTitle"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:background="?attr/colorSurface"
-                app:tabIndicatorFullWidth="false"
-                app:tabMode="fixed"
-                app:tabSelectedTextColor="?attr/colorPrimary"
-                app:tabTextColor="?attr/colorOnSurfaceVariant" />
+                android:layout_marginStart="6dp"
+                android:layout_weight="1"
+                android:text="MSN Messenger"
+                android:textColor="@android:color/white"
+                android:textSize="13sp"
+                android:textStyle="bold" />
 
-        </com.google.android.material.appbar.AppBarLayout>
+            <!-- Window Control Buttons (- [] X) -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
 
-        <androidx.viewpager2.widget.ViewPager2
-            android:id="@+id/viewPager"
+                <TextView
+                    android:id="@+id/btnMsnMinimize"
+                    android:layout_width="20dp"
+                    android:layout_height="18dp"
+                    android:layout_marginEnd="2dp"
+                    android:background="#2E68B4"
+                    android:gravity="center"
+                    android:text="-"
+                    android:textColor="@android:color/white"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/btnMsnMaximize"
+                    android:layout_width="20dp"
+                    android:layout_height="18dp"
+                    android:layout_marginEnd="2dp"
+                    android:background="#2E68B4"
+                    android:gravity="center"
+                    android:text="□"
+                    android:textColor="@android:color/white"
+                    android:textSize="10sp" />
+
+                <TextView
+                    android:id="@+id/btnMsnClose"
+                    android:layout_width="20dp"
+                    android:layout_height="18dp"
+                    android:background="#D32F2F"
+                    android:gravity="center"
+                    android:text="X"
+                    android:textColor="@android:color/white"
+                    android:textSize="10sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- 2. Menu Bar (File, Contacts, Actions, Tools, Help) -->
+        <LinearLayout
+            android:id="@+id/msnMenuBar"
+            android:layout_width="match_parent"
+            android:layout_height="24dp"
+            android:background="#ECE9D8"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="6dp"
+            app:layout_constraintTop_toBottomOf="@id/msnTitleBar">
+
+            <TextView
+                android:id="@+id/tvMenuFile"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="6dp"
+                android:text="File"
+                android:textColor="#000000"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/tvMenuContacts"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="6dp"
+                android:text="Contacts"
+                android:textColor="#000000"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/tvMenuActions"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="6dp"
+                android:text="Actions"
+                android:textColor="#000000"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/tvMenuTools"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="6dp"
+                android:text="Tools"
+                android:textColor="#000000"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/tvMenuHelp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="6dp"
+                android:text="Help"
+                android:textColor="#000000"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <!-- 3. User Profile Header Card -->
+        <LinearLayout
+            android:id="@+id/msnProfileHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#E1ECF9"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="8dp"
+            app:layout_constraintTop_toBottomOf="@id/msnMenuBar">
+
+            <!-- Green Buddy Avatar / User Avatar -->
+            <FrameLayout
+                android:id="@+id/layoutMsnAvatarContainer"
+                android:layout_width="42dp"
+                android:layout_height="42dp">
+
+                <ImageView
+                    android:id="@+id/ivMsnGreenBuddy"
+                    android:layout_width="38dp"
+                    android:layout_height="38dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_msn_green_buddy" />
+
+                <com.limpe.tengerium.ui.AvatarStatusView
+                    android:id="@+id/msnAvatarStatusView"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_gravity="center"
+                    android:visibility="gone" />
+            </FrameLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvMyStatusLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="My Status:"
+                    android:textColor="#708090"
+                    android:textSize="11sp" />
+
+                <!-- Display Name (Status) Dropdown -->
+                <LinearLayout
+                    android:id="@+id/btnMsnStatusDropdown"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingVertical="2dp">
+
+                    <TextView
+                        android:id="@+id/tvMsnUserDisplayName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="JoliB (Online)"
+                        android:textColor="#000000"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <ImageView
+                        android:layout_width="12dp"
+                        android:layout_height="12dp"
+                        android:layout_marginStart="4dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_arrow_down"
+                        app:tint="#316AC5" />
+                </LinearLayout>
+
+                <!-- Email status link -->
+                <LinearLayout
+                    android:id="@+id/btnMsnEmailLink"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_email_login"
+                        app:tint="#316AC5" />
+
+                    <TextView
+                        android:id="@+id/tvMsnEmailStatus"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:text="No new e-mail messages"
+                        android:textColor="#1F59B1"
+                        android:textSize="11sp" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Divider line under profile header -->
+        <View
+            android:id="@+id/msnProfileDivider"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#B0C4DE"
+            app:layout_constraintTop_toBottomOf="@id/msnProfileHeader" />
+
+        <!-- 4. Left Sidebar + Main Content Layout -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
+            android:orientation="horizontal"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/appBarLayout" />
+            app:layout_constraintTop_toBottomOf="@id/msnProfileDivider">
+
+            <!-- Left MSN Vertical Sidebar -->
+            <LinearLayout
+                android:id="@+id/msnSidebar"
+                android:layout_width="38dp"
+                android:layout_height="match_parent"
+                android:background="#C3D6EF"
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                android:paddingVertical="8dp">
+
+                <ImageView
+                    android:id="@+id/btnSideBell"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:layout_marginBottom="12dp"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_msn_side_bell" />
+
+                <ImageView
+                    android:id="@+id/btnSideSmiley"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:layout_marginBottom="12dp"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_msn_side_smiley" />
+
+                <ImageView
+                    android:id="@+id/btnSideGraph"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:layout_marginBottom="12dp"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_msn_side_graph" />
+
+                <ImageView
+                    android:id="@+id/btnSidePlane"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:layout_marginBottom="12dp"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_msn_side_plane" />
+
+                <ImageView
+                    android:id="@+id/btnSideCar"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:layout_marginBottom="12dp"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_msn_side_car" />
+
+                <ImageView
+                    android:id="@+id/btnSideBag"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:layout_marginBottom="12dp"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_msn_side_bag" />
+
+                <ImageView
+                    android:id="@+id/btnSideGlass"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:layout_marginBottom="12dp"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_msn_side_glass" />
+
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    android:layout_weight="1" />
+
+                <ImageView
+                    android:id="@+id/btnSideLogo"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_msn_side_logo" />
+            </LinearLayout>
+
+            <!-- Main Content Area (Tabs + ViewPager) -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="#FFFFFF"
+                android:orientation="vertical">
+
+                <com.google.android.material.appbar.AppBarLayout
+                    android:id="@+id/appBarLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="#DCE6F7"
+                    app:elevation="0dp">
+
+                    <com.google.android.material.appbar.MaterialToolbar
+                        android:id="@+id/mainToolbar"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:visibility="gone"
+                        app:contentInsetStart="0dp"
+                        app:contentInsetStartWithNavigation="0dp">
+
+                        <include
+                            android:id="@+id/toolbarLayout"
+                            layout="@layout/view_toolbar_title" />
+                    </com.google.android.material.appbar.MaterialToolbar>
+
+                    <com.google.android.material.tabs.TabLayout
+                        android:id="@+id/tabLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="32dp"
+                        android:background="#DCE6F7"
+                        app:tabIndicatorColor="#1F59B1"
+                        app:tabIndicatorFullWidth="true"
+                        app:tabMode="fixed"
+                        app:tabSelectedTextColor="#1F59B1"
+                        app:tabTextColor="#555555" />
+                </com.google.android.material.appbar.AppBarLayout>
+
+                <androidx.viewpager2.widget.ViewPager2
+                    android:id="@+id/viewPager"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" />
+            </LinearLayout>
+        </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- Правая панель: Контейнер для Чата или Настроек -->
-    <!-- Убираем фон, чтобы при свайпе назад был виден список чатов/контактов -->
+    <!-- Right Panel: Chat / Details Fragment Container -->
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/detail_container"
         android:layout_width="match_parent"

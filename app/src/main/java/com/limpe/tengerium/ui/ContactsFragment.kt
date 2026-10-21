@@ -10,7 +10,6 @@ import android.widget.PopupWindow
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.PopupMenu
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
@@ -25,11 +24,13 @@ import com.limpe.tengerium.R
 import com.limpe.tengerium.TengeriumApp
 import com.limpe.tengerium.data.AppConfig
 import com.limpe.tengerium.data.MSNPLoginState
+import com.limpe.tengerium.data.protocol.MSNPProto
 import com.limpe.tengerium.databinding.FragmentContactsBinding
 import com.limpe.tengerium.databinding.LayoutChatMenuBinding
 import com.limpe.tengerium.domain.model.Contact
 import com.limpe.tengerium.domain.model.Group
 import com.limpe.tengerium.util.AnimationHelper
+import com.limpe.tengerium.util.SoundUtils
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
@@ -67,8 +68,73 @@ class ContactsFragment : Fragment() {
 
         setupRecyclerView()
         setupFab()
+        setupIWantToPanel()
+        setupBanner()
         observeData()
-        observeNewContacts()
+    }
+
+    private fun setupIWantToPanel() {
+        binding.btnMsnIWantToHeader.setOnClickListener {
+            val isVisible = binding.layoutMsnIWantToContent.isVisible
+            binding.layoutMsnIWantToContent.isVisible = !isVisible
+            binding.ivMsnIWantToChevron.setImageResource(
+                if (!isVisible) R.drawable.ic_msn_chevron else R.drawable.ic_msn_chevron_down
+            )
+        }
+
+        binding.btnMsnAddContact.setOnClickListener { navigateToAddFriend() }
+
+        binding.btnMsnSendIm.setOnClickListener {
+            val mainFragment = findMainFragment()
+            if (mainFragment != null) {
+                mainFragment.binding.viewPager.currentItem = 1
+            }
+        }
+
+        binding.btnMsnSendFile.setOnClickListener {
+            val mainFragment = findMainFragment()
+            if (mainFragment != null) {
+                mainFragment.showDetail(AvatarLibraryFragment(), addToBackStack = true)
+            } else {
+                findNavController().navigate(R.id.AvatarLibraryFragment)
+            }
+        }
+
+        binding.btnMsnPlayGame.setOnClickListener {
+            SoundUtils.playSound(requireContext(), R.raw.nudge)
+            val mainFragment = findMainFragment()
+            if (mainFragment != null) {
+                mainFragment.showDetail(EasterEggFragment(), addToBackStack = true)
+            } else {
+                findNavController().navigate(R.id.EasterEggFragment)
+            }
+        }
+
+        binding.btnMsnSearchContact.setOnClickListener {
+            binding.rvContacts.smoothScrollToPosition(0)
+        }
+
+        binding.btnMsnMore.setOnClickListener {
+            val mainFragment = findMainFragment()
+            if (mainFragment != null) {
+                mainFragment.showDetail(ChatSettingsFragment(), addToBackStack = true)
+            } else {
+                findNavController().navigate(R.id.ChatSettingsFragment)
+            }
+        }
+    }
+
+    private fun setupBanner() {
+        val openAbout = {
+            val mainFragment = findMainFragment()
+            if (mainFragment != null) {
+                mainFragment.showDetail(AboutFragment(), addToBackStack = true)
+            } else {
+                findNavController().navigate(R.id.AboutFragment)
+            }
+        }
+        binding.btnMsnJoin.setOnClickListener { openAbout() }
+        binding.layoutMsnBanner.setOnClickListener { openAbout() }
     }
 
     private fun setupRecyclerView() {
@@ -118,15 +184,6 @@ class ContactsFragment : Fragment() {
 
     private fun isOnline(): Boolean = repository.loginState.value is MSNPLoginState.Success
 
-    private fun checkOnlineAndNotify(): Boolean {
-        return if (isOnline()) {
-            true
-        } else {
-            Toast.makeText(requireContext(), R.string.not_connected_message, Toast.LENGTH_SHORT).show()
-            false
-        }
-    }
-
     private fun showContactContextMenu(anchor: View, contact: Contact) {
         val menuBinding = LayoutChatMenuBinding.inflate(layoutInflater)
         val popup = PopupWindow(menuBinding.root, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, true)
@@ -143,7 +200,6 @@ class ContactsFragment : Fragment() {
         
         val online = isOnline()
 
-        // Перемещение в папку
         menuBinding.btnMenuFolder.isVisible = availableGroups.isNotEmpty()
         menuBinding.btnMenuFolder.isEnabled = online
         menuBinding.btnMenuFolder.alpha = if (online) 1.0f else 0.5f
@@ -152,7 +208,6 @@ class ContactsFragment : Fragment() {
             showChangeGroupDialog(contact, availableGroups)
         }
 
-        // Удаление из папки
         val isInAnyGroup = contact.groupGuids.isNotEmpty()
         menuBinding.btnMenuRemoveFolder.isVisible = isInAnyGroup
         menuBinding.btnMenuRemoveFolder.isEnabled = online
@@ -176,7 +231,6 @@ class ContactsFragment : Fragment() {
             popup.dismiss()
         }
 
-        // Блокировка
         val isBlocked = contact.listType.contains("BL")
         menuBinding.btnMenuBlock.isVisible = true
         menuBinding.btnMenuBlock.isEnabled = online
@@ -196,7 +250,7 @@ class ContactsFragment : Fragment() {
     }
 
     private fun showGroupContextMenu(view: View, group: Group) {
-        if (group.guid == "other") return
+        if (group.guid == "online" || group.guid == "not_online" || group.guid == "other") return
         val popup = PopupMenu(requireContext(), view)
         val deleteItem = popup.menu.add(getString(R.string.delete))
         
@@ -260,8 +314,6 @@ class ContactsFragment : Fragment() {
                     }
                     val hasRealContacts = items.any { it is ContactAdapter.ContactItem.User || it is ContactAdapter.ContactItem.GroupHeader }
                     binding.layoutEmpty.visibility = if (isConnected && !hasRealContacts && requestsCount <= 0) View.VISIBLE else View.GONE
-                    
-                    // Если OFFCLIS включен, скрываем плашку "не вошли", так как показываем локальный список.
                     binding.layoutNotConnected.visibility = if (!isConnected && !AppConfig.OFFCLIS) View.VISIBLE else View.GONE
                 }
             }
@@ -279,7 +331,6 @@ class ContactsFragment : Fragment() {
         val isConnected = loginState is MSNPLoginState.Success
         val myAcc = repository.getSavedAccount()?.lowercase(Locale.ROOT)?.trim()
         
-        // Filter out self from the contacts list
         val filteredContacts = contacts.filter { it.account.lowercase(Locale.ROOT).trim() != myAcc }
         
         if (requests.isNotEmpty()) {
@@ -287,113 +338,71 @@ class ContactsFragment : Fragment() {
             if (filteredRequests.isNotEmpty()) items.add(ContactAdapter.ContactItem.Header(filteredRequests.size))
         }
 
-        // Если мы не в сети и флаг оффлайн-списка выключен — ничего не показываем
         if (!isConnected && !AppConfig.OFFCLIS) {
             return Triple(items, requests.size, isConnected)
         }
 
         val displayedAccounts = mutableSetOf<String>()
 
-        // 1. Показываем группы, которые есть в списке groups
-        groups.forEach { group ->
-            val groupContacts = filteredContacts.filter { it.groupGuids.contains(group.guid) }
-            val onlineInGroup = groupContacts.filter { it.status != "FLN" }.sortedBy { it.nickname.lowercase(Locale.ROOT) }
-            val offlineInGroup = groupContacts.filter { it.status == "FLN" }.sortedBy { it.nickname.lowercase(Locale.ROOT) }
-            val isExpanded = !collapsed.contains(group.guid)
-            
-            items.add(ContactAdapter.ContactItem.GroupHeader(group, onlineInGroup.size, groupContacts.size, isExpanded))
-            
-            if (isExpanded) {
-                onlineInGroup.forEach { 
-                    items.add(ContactAdapter.ContactItem.User(it, securePrefs.isChatMuted(it.account)))
-                    displayedAccounts.add(it.account.lowercase(Locale.ROOT))
+        if (groups.isNotEmpty()) {
+            groups.forEach { group ->
+                val groupContacts = filteredContacts.filter { it.groupGuids.contains(group.guid) }
+                val onlineInGroup = groupContacts.filter { it.status != "FLN" && it.status != "HDN" && it.status != "OFFLINE" }.sortedBy { it.nickname.lowercase(Locale.ROOT) }
+                val offlineInGroup = groupContacts.filter { it.status == "FLN" || it.status == "HDN" || it.status == "OFFLINE" }.sortedBy { it.nickname.lowercase(Locale.ROOT) }
+                val isExpanded = !collapsed.contains(group.guid)
+                
+                items.add(ContactAdapter.ContactItem.GroupHeader(group, onlineInGroup.size, groupContacts.size, isExpanded))
+                
+                if (isExpanded) {
+                    onlineInGroup.forEach { 
+                        items.add(ContactAdapter.ContactItem.User(it, securePrefs.isChatMuted(it.account)))
+                        displayedAccounts.add(it.account.lowercase(Locale.ROOT))
+                    }
+                    offlineInGroup.forEach { 
+                        items.add(ContactAdapter.ContactItem.User(it, securePrefs.isChatMuted(it.account)))
+                        displayedAccounts.add(it.account.lowercase(Locale.ROOT))
+                    }
+                } else {
+                    groupContacts.forEach { displayedAccounts.add(it.account.lowercase(Locale.ROOT)) }
                 }
-                offlineInGroup.forEach { 
-                    items.add(ContactAdapter.ContactItem.User(it, securePrefs.isChatMuted(it.account)))
-                    displayedAccounts.add(it.account.lowercase(Locale.ROOT))
-                }
-            } else {
-                // Если группа свернута, всё равно помечаем контакты как отображенные (в этой группе)
-                groupContacts.forEach { displayedAccounts.add(it.account.lowercase(Locale.ROOT)) }
             }
         }
 
-        // 2. Все остальные контакты (без групп или с GUID-ами, которых нет в groups)
         val remainingContacts = filteredContacts.filter { !displayedAccounts.contains(it.account.lowercase(Locale.ROOT)) }
-        if (remainingContacts.isNotEmpty()) {
-            val onlineOther = remainingContacts.filter { it.status != "FLN" }.sortedBy { it.nickname.lowercase(Locale.ROOT) }
-            val offlineOther = remainingContacts.filter { it.status == "FLN" }.sortedBy { it.nickname.lowercase(Locale.ROOT) }
-            val isExpanded = !collapsed.contains("other")
-            
-            items.add(ContactAdapter.ContactItem.GroupHeader(
-                Group("other", getString(R.string.other_contacts), emptyList()),
-                onlineOther.size,
-                remainingContacts.size,
-                isExpanded
-            ))
-            
-            if (isExpanded) {
-                onlineOther.forEach { items.add(ContactAdapter.ContactItem.User(it, securePrefs.isChatMuted(it.account))) }
-                offlineOther.forEach { items.add(ContactAdapter.ContactItem.User(it, securePrefs.isChatMuted(it.account))) }
-            }
+        val onlineOther = remainingContacts.filter { it.status != "FLN" && it.status != "HDN" && it.status != "OFFLINE" }.sortedBy { it.nickname.lowercase(Locale.ROOT) }
+        val offlineOther = remainingContacts.filter { it.status == "FLN" || it.status == "HDN" || it.status == "OFFLINE" }.sortedBy { it.nickname.lowercase(Locale.ROOT) }
+
+        // Classic MSN Group 1: Online
+        val isOnlineExpanded = !collapsed.contains("online")
+        items.add(ContactAdapter.ContactItem.GroupHeader(
+            Group("online", "Online", emptyList()),
+            onlineOther.size,
+            onlineOther.size,
+            isOnlineExpanded
+        ))
+        if (isOnlineExpanded) {
+            onlineOther.forEach { items.add(ContactAdapter.ContactItem.User(it, securePrefs.isChatMuted(it.account))) }
+        }
+
+        // Classic MSN Group 2: Not Online
+        val isOfflineExpanded = !collapsed.contains("not_online")
+        items.add(ContactAdapter.ContactItem.GroupHeader(
+            Group("not_online", "Not Online", emptyList()),
+            0,
+            offlineOther.size,
+            isOfflineExpanded
+        ))
+        if (isOfflineExpanded) {
+            offlineOther.forEach { items.add(ContactAdapter.ContactItem.User(it, securePrefs.isChatMuted(it.account))) }
         }
 
         return Triple(items, requests.size, isConnected)
     }
 
-    private fun observeNewContacts() {
-    }
-
     private fun setupFab() {
         binding.fabAddContact.setOnClickListener {
-            showFabMenu(it)
-        }
-    }
-
-    private fun showFabMenu(anchor: View) {
-        val menuBinding = LayoutChatMenuBinding.inflate(layoutInflater)
-        val popup = PopupWindow(menuBinding.root, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, true)
-        popup.elevation = 20f
-
-        // Скрываем все ненужные кнопки
-        menuBinding.btnMenuPin.isVisible = false
-        menuBinding.btnMenuNudge.isVisible = false
-        menuBinding.btnMenuMute.isVisible = false
-        menuBinding.btnMenuBlock.isVisible = false
-        menuBinding.btnMenuExport.isVisible = false
-        menuBinding.btnMenuClear.isVisible = false
-        menuBinding.btnMenuRemoveFolder.isVisible = false
-
-        val online = isOnline()
-
-        // Используем btnMenuFolder для "Add Friend"
-        menuBinding.btnMenuFolder.isVisible = true
-        menuBinding.btnMenuFolder.isEnabled = online
-        menuBinding.btnMenuFolder.alpha = if (online) 1.0f else 0.5f
-        menuBinding.btnMenuFolder.text = getString(R.string.add_friend)
-        menuBinding.btnMenuFolder.setIconResource(R.drawable.ic_email_login)
-        menuBinding.btnMenuFolder.setOnClickListener {
-            popup.dismiss()
             navigateToAddFriend()
         }
-
-        // Используем btnMenuPin для "Create Group"
-        val btnCreateGroup = menuBinding.btnMenuPin
-        btnCreateGroup.isVisible = true
-        btnCreateGroup.isEnabled = online
-        btnCreateGroup.alpha = if (online) 1.0f else 0.5f
-        btnCreateGroup.text = getString(R.string.create_group)
-        btnCreateGroup.setIconResource(R.drawable.ic_folder)
-        btnCreateGroup.setOnClickListener {
-            popup.dismiss()
-            showCreateGroupDialog()
-        }
-
-        menuBinding.root.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
-        val xOffset = anchor.width - menuBinding.root.measuredWidth
-        val yOffset = -anchor.height - menuBinding.root.measuredHeight
-        
-        AnimationHelper.showSmartPopup(popup, anchor, xOffset, yOffset)
     }
 
     private fun navigateToAddFriend() {
@@ -403,28 +412,6 @@ class ContactsFragment : Fragment() {
         } else {
             findNavController().navigate(R.id.action_MainFragment_to_AddContactFragment)
         }
-    }
-
-    private fun showCreateGroupDialog() {
-        val input = EditText(requireContext())
-        input.hint = getString(R.string.create_group)
-        val container = FrameLayout(requireContext())
-        val params = FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-        params.setMargins(48, 24, 48, 24)
-        input.layoutParams = params
-        container.addView(input)
-
-        AlertDialog.Builder(requireContext())
-            .setTitle(R.string.create_group)
-            .setView(container)
-            .setPositiveButton(R.string.add) { _, _ ->
-                val name = input.text.toString().trim()
-                if (name.isNotEmpty()) {
-                    repository.createGroup(name)
-                }
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
     }
 
     private fun findMainFragment(): MainFragment? {

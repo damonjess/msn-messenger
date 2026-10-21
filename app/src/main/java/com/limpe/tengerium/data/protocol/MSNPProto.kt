@@ -10,7 +10,13 @@ object MSNPProto {
     
     // эндпоинт нексус
     fun getNexusUrl(prefs: SecurePrefs): String {
-        return "https://${prefs.nexusDomain}/rdr/pprdr.asp"
+        var domain = prefs.nexusDomain.ifEmpty { "m1.escargot.chat" }
+        if (domain == "nexus.escargot.chat" || domain == "escargot.chat") domain = "m1.escargot.chat"
+        return if (domain.startsWith("http://") || domain.startsWith("https://")) {
+            if (domain.contains("/rdr/pprdr.asp")) domain else "$domain/rdr/pprdr.asp"
+        } else {
+            "https://$domain/rdr/pprdr.asp"
+        }
     }
 
     object Status {

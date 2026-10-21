@@ -166,7 +166,10 @@ class SecurePrefs(private val context: Context) {
         set(value) = plainPrefs.edit().putInt("last_version_code", value).apply()
 
     var serverAddress: String
-        get() = plainPrefs.getString("server_address", "") ?: ""
+        get() {
+            val s = plainPrefs.getString("server_address", "m1.escargot.chat")
+            return if (s.isNullOrEmpty() || s == "mserver.escargot.chat" || s == "escargot.chat") "m1.escargot.chat" else s
+        }
         set(value) = plainPrefs.edit().putString("server_address", value).apply()
 
     var serverPort: Int
@@ -174,7 +177,10 @@ class SecurePrefs(private val context: Context) {
         set(value) = plainPrefs.edit().putInt("server_port", value).apply()
 
     var nexusDomain: String
-        get() = plainPrefs.getString("nexus_domain", "") ?: ""
+        get() {
+            val n = plainPrefs.getString("nexus_domain", "m1.escargot.chat")
+            return if (n.isNullOrEmpty() || n == "nexus.escargot.chat" || n == "escargot.chat") "m1.escargot.chat" else n
+        }
         set(value) = plainPrefs.edit().putString("nexus_domain", value).apply()
 
     var configUrl: String

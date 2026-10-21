@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="20dp"
+    android:height="20dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Key ring -->
+    <path
+        android:fillColor="#1565C0"
+        android:pathData="M7,11 C9.21,11 11,9.21 11,7 C11,4.79 9.21,3 7,3 C4.79,3 3,4.79 3,7 C3,9.21 4.79,11 7,11 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M7,8.5 C7.83,8.5 8.5,7.83 8.5,7 C8.5,6.17 7.83,5.5 7,5.5 C6.17,5.5 5.5,6.17 5.5,7 C5.5,7.83 6.17,8.5 7,8.5 Z" />
+    <!-- Key stem -->
+    <path
+        android:fillColor="#1565C0"
+        android:pathData="M10,8 L20,8 L20,11 L18,11 L18,13 L16,13 L16,11 L14,11 L14,13 L12,13 L12,10 L10,10 Z" />
+    <!-- Passport Buddy figure -->
+    <path
+        android:fillColor="#2E7D32"
+        android:pathData="M16,15 C17.1,15 18,14.1 18,13 C18,11.9 17.1,11 16,11 C14.9,11 14,11.9 14,13 C14,14.1 14.9,15 16,15 Z M16,16 C14.33,16 11,16.83 11,18.5 L11,20 L21,20 L21,18.5 C21,16.83 17.67,16 16,16 Z" />
+</vector>

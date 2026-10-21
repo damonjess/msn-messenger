@@ -43,11 +43,28 @@ class MSNP11NotificationManager(
         connectJob?.cancel()
         connectJob = scope.safeLaunch(TAG) {
             try {
-                val cleanHost = host.trim()
-                Log.d(TAG, "Connecting to $cleanHost:$port as $account")
+                var cleanHost = host.trim().ifEmpty { "m1.escargot.chat" }
+                if (cleanHost == "mserver.escargot.chat" || cleanHost == "escargot.chat") cleanHost = "m1.escargot.chat"
+                var cleanNexusUrl = if (nexusUrl.isBlank() || nexusUrl.contains("///")) "https://m1.escargot.chat/rdr/pprdr.asp" else nexusUrl
+                if (cleanNexusUrl.contains("nexus.escargot.chat") || cleanNexusUrl.contains("https://escargot.chat/")) {
+                    cleanNexusUrl = cleanNexusUrl.replace("nexus.escargot.chat", "m1.escargot.chat").replace("https://escargot.chat/", "https://m1.escargot.chat/")
+                }
+
+                val resolvedHost = withContext(Dispatchers.IO) {
+                    try {
+                        val addrs = java.net.InetAddress.getAllByName(cleanHost)
+                        val ipv4 = addrs.firstOrNull { it is java.net.Inet4Address }
+                        ipv4?.hostAddress ?: cleanHost
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Failed to resolve $cleanHost to IPv4, using fallback", e)
+                        if (cleanHost.contains("escargot")) "143.198.4.104" else cleanHost
+                    }
+                }
+
+                Log.d(TAG, "Connecting to $cleanHost ($resolvedHost):$port as $account using nexus $cleanNexusUrl")
                 rustClient?.destroySafe()
                 
-                val client = Client(cleanHost, port.toUShort())
+                val client = Client(resolvedHost, port.toUShort())
                 rustClient = client
                 
                 client.addEventHandler(object : EventHandler {
@@ -56,9 +73,9 @@ class MSNP11NotificationManager(
                     }
                 })
 
-                val loginEvent = client.login(account, password, currentNexusUrl, "Tengerium", "0.0.4")
+                val loginEvent = client.login(account, password, cleanNexusUrl, "Tengerium", "0.0.4")
                 handleEvent(loginEvent)
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 if (e is CancellationException) throw e
                 val errorMsg = if (e.message.isNullOrBlank() || e.message == ".") e.javaClass.simpleName else e.message
                 Log.e(TAG, "Connection failed: $errorMsg", e)

@@ -55,6 +55,8 @@ class AuthFragment : Fragment() {
         }
 
         setupValidation()
+        setupMenuListeners()
+        setupStatusSelector()
 
         binding.btnAuthMenu.setOnClickListener {
             showPopupMenu(it)
@@ -145,9 +147,6 @@ class AuthFragment : Fragment() {
     }
 
     private fun setupNewLoginExperience() {
-        binding.tvAppName.visibility = View.GONE
-        
-        // Показываем футер с логотипом Limpe
         binding.layoutFooter.visibility = View.VISIBLE
         binding.ivFooterLogo.visibility = View.VISIBLE
 
@@ -161,6 +160,37 @@ class AuthFragment : Fragment() {
             binding.layoutFooter
         )
         AnimationHelper.animateLoginInputs(inputViews)
+    }
+
+    private fun setupMenuListeners() {
+        val menuClickListener = View.OnClickListener { showPopupMenu(it) }
+        binding.menuFile.setOnClickListener(menuClickListener)
+        binding.menuContacts.setOnClickListener(menuClickListener)
+        binding.menuActions.setOnClickListener(menuClickListener)
+        binding.menuTools.setOnClickListener(menuClickListener)
+        binding.menuHelp.setOnClickListener(menuClickListener)
+
+        val dialogListener = View.OnClickListener {
+            ConnectionDialogHelper.showConnectionDialog(requireContext(), securePrefs)
+        }
+        binding.tvForgotPassword.setOnClickListener(dialogListener)
+        binding.tvServiceStatus.setOnClickListener(dialogListener)
+        binding.tvGetNewAccount.setOnClickListener(dialogListener)
+    }
+
+    private fun setupStatusSelector() {
+        binding.tvSelectedStatus.setOnClickListener { v ->
+            val popup = PopupMenu(requireContext(), v)
+            popup.menu.add(0, 1, 0, getString(R.string.online))
+            popup.menu.add(0, 2, 1, getString(R.string.busy))
+            popup.menu.add(0, 3, 2, getString(R.string.away))
+            popup.menu.add(0, 4, 3, getString(R.string.offline))
+            popup.setOnMenuItemClickListener { item ->
+                binding.tvSelectedStatus.text = "${item.title} ▾"
+                true
+            }
+            popup.show()
+        }
     }
 
     private fun setupValidation() {

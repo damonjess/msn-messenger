@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="100dp"
+    android:height="100dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+
+    <!-- Blue Wing (Right/Behind) -->
+    <path
+        android:fillColor="#2196F3"
+        android:pathData="M52,32 C65,22 80,30 78,48 C76,60 62,65 52,55 Z" />
+
+    <!-- Orange Wing (Far Right/Lower) -->
+    <path
+        android:fillColor="#FF9800"
+        android:pathData="M50,48 C62,42 75,50 72,68 C70,78 58,80 48,70 Z" />
+
+    <!-- Green Buddy Head -->
+    <path
+        android:fillColor="#4CAF50"
+        android:pathData="M42,28 C49.18,28 55,22.18 55,15 C55,7.82 49.18,2 42,2 C34.82,2 29,7.82 29,15 C29,22.18 34.82,28 42,28 Z" />
+
+    <!-- Head Highlight/Gloss -->
+    <path
+        android:fillColor="#A5D6A7"
+        android:pathData="M38,8 C42,8 45,11 45,14 C45,11 41,6 36,7 C36,7 37,8 38,8 Z" />
+
+    <!-- Green Buddy Body -->
+    <path
+        android:fillColor="#388E3C"
+        android:pathData="M42,30 C28,30 18,42 18,65 L18,80 L66,80 L66,65 C66,42 56,30 42,30 Z" />
+
+    <!-- Body Highlight/Gloss -->
+    <path
+        android:fillColor="#81C784"
+        android:pathData="M42,32 C32,32 24,42 22,58 C24,46 32,36 42,36 C48,36 54,40 58,48 C56,38 50,32 42,32 Z" />
+
+</vector>
