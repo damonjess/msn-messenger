@@ -8,6 +8,15 @@
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
 .DS_Store
+
+# Local secrets
+.env
+.env.*
+!.env.example
+
+# Local tooling and QA artifacts
+.freebuff/
+qa-shots/
 /build
 /captures
 .externalNativeBuild

@@ -37,6 +37,13 @@ Feature availability depends on the server you connect to.
 2. Allow Gradle to sync and download the Android dependencies.
 3. Select the `app` run configuration and launch it on a device or emulator.
 
+To build and install a debug build on a connected device with local secrets injected
+from [Infisical](INFISICAL.md):
+
+```bash
+make dev
+```
+
 To build a debug APK from the command line:
 
 ```bash
