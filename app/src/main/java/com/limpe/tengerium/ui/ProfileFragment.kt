@@ -329,9 +329,7 @@ class ProfileFragment : DialogFragment() {
                             } else {
                                 securePrefs.getNickname(targetAccount)?.ifEmpty { contact?.nickname } ?: contact?.nickname
                             }
-                            b.tvNickname.text = FormattingUtils.formatBBCode(myNickname ?: targetAccount)
-                            b.tvAccount.text = targetAccount
-                            b.tvAccount.visibility = View.VISIBLE
+                            bindProfileName(b, myNickname, targetAccount)
                         } else {
                             b.tvNickname.text = FormattingUtils.formatBBCode(contact?.nickname ?: targetAccount)
                             
@@ -356,7 +354,7 @@ class ProfileFragment : DialogFragment() {
                             val b = _binding ?: return@collectLatest
                             if (state is MSNPLoginState.Success && targetAccount.equals(state.account, ignoreCase = true)) {
                                     val name = state.nickname.ifEmpty { securePrefs.getNickname(state.account)?.ifEmpty { state.account } ?: state.account }
-                                    b.tvNickname.text = FormattingUtils.formatBBCode(name ?: targetAccount)
+                                    bindProfileName(b, name, targetAccount)
                                     currentAvatarPath = state.avatarUrl
                                     b.avatarStatusView.setAvatar(currentAvatarPath, state.account)
                             }
@@ -372,6 +370,20 @@ class ProfileFragment : DialogFragment() {
                 }
             }
         }
+    }
+
+    /**
+     * Shows the nickname in the headline and the account as a secondary line only when
+     * they actually differ. Without a nickname the account becomes the headline, so it
+     * stays on one autosized line instead of repeating below and wrapping onto three.
+     */
+    private fun bindProfileName(b: FragmentProfileBinding, nickname: String?, account: String) {
+        val cleanNickname = nickname?.takeIf { it.isNotBlank() && !it.equals(account, ignoreCase = true) }
+        val showingAccount = cleanNickname == null
+        b.tvNickname.maxLines = if (showingAccount) 1 else 2
+        b.tvNickname.text = FormattingUtils.formatBBCode(cleanNickname ?: account)
+        b.tvAccount.text = account
+        b.tvAccount.visibility = if (showingAccount) View.GONE else View.VISIBLE
     }
 
     private fun updateStatusUI(status: String) {

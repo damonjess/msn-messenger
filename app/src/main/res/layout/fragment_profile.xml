@@ -121,6 +121,12 @@
                         android:textStyle="bold"
                         android:gravity="center"
                         android:textColor="?attr/colorOnSurface"
+                        android:maxLines="2"
+                        android:ellipsize="end"
+                        app:autoSizeTextType="uniform"
+                        app:autoSizeMinTextSize="16sp"
+                        app:autoSizeMaxTextSize="28sp"
+                        app:autoSizeStepGranularity="1sp"
                         tools:text="Nickname" />
 
                     <TextView
