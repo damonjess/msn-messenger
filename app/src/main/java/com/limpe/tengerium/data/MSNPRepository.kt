@@ -63,6 +63,7 @@ class MSNPRepository @Inject constructor(val context: Context) : MSNPProtocolLis
 
     private var currentAccount: String? = null
     private var userInitiatedLogout = false
+    private var wasSessionActive = false
     private val isReconnecting = AtomicBoolean(false)
     private val reconnectAttempt = AtomicInteger(0)
     private var reconnectJob: Job? = null
@@ -131,6 +132,10 @@ class MSNPRepository @Inject constructor(val context: Context) : MSNPProtocolLis
         Log.d(TAG, "Network state updated: $isConnected (was $wasConnected), state=${_loginState.value}")
         
         if (!isConnected) {
+            val currentState = _loginState.value
+            if (currentState is MSNPLoginState.Success || currentState is MSNPLoginState.Loading || currentState is MSNPLoginState.Reconnecting) {
+                wasSessionActive = true
+            }
             _loginState.value = MSNPLoginState.NoInternet
             nsManager.disconnect()
             reconnectJob?.cancel()
@@ -138,9 +143,11 @@ class MSNPRepository @Inject constructor(val context: Context) : MSNPProtocolLis
             // Network restored
             if (_loginState.value == MSNPLoginState.NoInternet) {
                 _loginState.value = MSNPLoginState.Idle
-                if (!userInitiatedLogout && getSavedAccount() != null) {
+                if (!userInitiatedLogout && getSavedAccount() != null && (securePrefs.autoSignIn || wasSessionActive)) {
                     Log.d(TAG, "Network restored, auto-logging in...")
                     autoLogin()
+                } else {
+                    Log.d(TAG, "Network restored, skipping auto-login (autoSignIn=${securePrefs.autoSignIn}, wasSessionActive=$wasSessionActive)")
                 }
             }
         }
@@ -246,6 +253,7 @@ class MSNPRepository @Inject constructor(val context: Context) : MSNPProtocolLis
     fun logout() {
         Log.d(TAG, "Logout requested")
         userInitiatedLogout = true
+        wasSessionActive = false
         // An explicit sign-out turns off "Sign me in automatically" and drops the in-memory password.
         securePrefs.autoSignIn = false
         sessionPass = null
@@ -465,6 +473,7 @@ class MSNPRepository @Inject constructor(val context: Context) : MSNPProtocolLis
 
     override fun onAuthSuccess(account: String, nickname: String) {
         Log.d(TAG, "onAuthSuccess for $account")
+        wasSessionActive = true
         val normalized = account.lowercase(Locale.ROOT).trim()
         currentAccount = normalized
         reconnectAttempt.set(0)
@@ -607,6 +616,7 @@ class MSNPRepository @Inject constructor(val context: Context) : MSNPProtocolLis
                 _loginState.value = MSNPLoginState.LoggedInElsewhere(message)
             } else {
                 if (message == "AUTH_INVALID_PASSWORD" || message == "AUTH_INVALID_ACCOUNT" || message == "ERROR_AUTH_FAILED") {
+                    wasSessionActive = false
                     _loginState.value = MSNPLoginState.Error(message)
                     return@launch
                 }
