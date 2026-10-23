@@ -22,6 +22,7 @@ class MSNP11NotificationManager(
 
     private var rustClient: Client? = null
     private var connectJob: Job? = null
+    private var heartbeatJob: Job? = null
     private val transactionId = AtomicInteger(1)
     
     private val contactStatuses = ConcurrentHashMap<String, String>()
@@ -92,6 +93,7 @@ class MSNP11NotificationManager(
                         listener.onConnected()
                         requestConfig()
                         listener.onAuthSuccess(currentAccount, "")
+                        startHeartbeatLoop()
                     }
                 }
                 
@@ -187,6 +189,7 @@ class MSNP11NotificationManager(
                 }
 
                 is Event.Disconnected -> {
+                    stopHeartbeatLoop()
                     contactStatuses.clear()
                     scope.safeLaunch(TAG) { listener.onDisconnected() }
                 }
@@ -229,7 +232,32 @@ class MSNP11NotificationManager(
         }
     }
 
+    private fun startHeartbeatLoop() {
+        heartbeatJob?.cancel()
+        heartbeatJob = scope.launch {
+            while (isActive) {
+                delay(45000L) // Ping every 45 seconds to keep TCP socket active
+                try {
+                    val client = rustClient
+                    if (client != null && currentStatus != "FLN") {
+                        val rustStatus = MSNP11Mapper.mapToMsnpStatus(currentStatus)
+                        client.setPresence(rustStatus)
+                        Log.d(TAG, "Sent background heartbeat ping")
+                    }
+                } catch (e: Exception) {
+                    Log.w(TAG, "Heartbeat ping failed: ${e.message}")
+                }
+            }
+        }
+    }
+
+    private fun stopHeartbeatLoop() {
+        heartbeatJob?.cancel()
+        heartbeatJob = null
+    }
+
     override fun disconnect() {
+        stopHeartbeatLoop()
         connectJob?.cancel()
         scope.safeLaunch(TAG) {
             try {

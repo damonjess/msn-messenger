@@ -12,6 +12,7 @@ import android.os.Build
 import android.os.IBinder
 import android.os.Vibrator
 import android.os.VibrationEffect
+import android.os.PowerManager
 import android.telephony.PhoneStateListener
 import android.telephony.TelephonyCallback
 import android.telephony.TelephonyManager
@@ -48,6 +49,32 @@ class MSNPService : Service() {
     
     private lateinit var securePrefs: SecurePrefs
     private val contactStatuses = mutableMapOf<String, String>()
+    private var wakeLock: PowerManager.WakeLock? = null
+
+    private fun acquireWakeLock() {
+        if (wakeLock?.isHeld == true) return
+        try {
+            val pm = getSystemService(Context.POWER_SERVICE) as? PowerManager
+            wakeLock = pm?.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Tengerium:MSNPServiceWakeLock")?.apply {
+                setReferenceCounted(false)
+                acquire(15 * 60 * 1000L) // 15-minute safety timeout, renewed on state check
+            }
+            Log.d("MSNPService", "Partial WakeLock acquired for background execution")
+        } catch (e: Exception) {
+            Log.e("MSNPService", "Failed to acquire WakeLock: ${e.message}")
+        }
+    }
+
+    private fun releaseWakeLock() {
+        try {
+            if (wakeLock?.isHeld == true) {
+                wakeLock?.release()
+                Log.d("MSNPService", "WakeLock released")
+            }
+        } catch (e: Exception) {
+            Log.e("MSNPService", "Error releasing WakeLock: ${e.message}")
+        }
+    }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -135,16 +162,20 @@ class MSNPService : Service() {
         val repository = (application as TengeriumApp).repository
         serviceScope.launch {
             repository.loginState
-                .map { state ->
+                .collectLatest { state ->
                     when (state) {
-                        is MSNPLoginState.Success -> state.nickname
-                        is MSNPLoginState.Loading, is MSNPLoginState.Reconnecting -> getString(R.string.status_trying_to_connect)
-                        else -> null
+                        is MSNPLoginState.Success -> {
+                            acquireWakeLock()
+                            updateForegroundNotification(state.nickname)
+                        }
+                        is MSNPLoginState.Loading, is MSNPLoginState.Reconnecting -> {
+                            updateForegroundNotification(getString(R.string.status_trying_to_connect))
+                        }
+                        else -> {
+                            releaseWakeLock()
+                            updateForegroundNotification(null)
+                        }
                     }
-                }
-                .distinctUntilChanged()
-                .collectLatest { statusText ->
-                    updateForegroundNotification(statusText)
                 }
         }
         
@@ -289,6 +320,7 @@ class MSNPService : Service() {
         } catch (_: Exception) {
             // Ignore
         }
+        releaseWakeLock()
         super.onDestroy()
         serviceScope.cancel()
     }

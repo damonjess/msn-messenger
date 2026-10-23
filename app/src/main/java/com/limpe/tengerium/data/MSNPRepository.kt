@@ -88,6 +88,8 @@ class MSNPRepository @Inject constructor(val context: Context) : MSNPProtocolLis
     private var sessionPass: String? = null
 
     init {
+        startOutboxRetryProcessor()
+
         // Наблюдаем за состоянием сети глобально
         scope.launch {
             NetworkObserver(context.applicationContext).isConnected.collectLatest { isConnected ->
@@ -336,10 +338,40 @@ class MSNPRepository @Inject constructor(val context: Context) : MSNPProtocolLis
         }
     }
 
+    private var outboxRetryJob: Job? = null
+
+    private fun startOutboxRetryProcessor() {
+        outboxRetryJob?.cancel()
+        outboxRetryJob = scope.launch {
+            while (isActive) {
+                delay(10000L) // Check outbox queue every 10 seconds
+                val owner = getCurrentAccount()
+                if (!owner.isNullOrBlank() && _loginState.value is MSNPLoginState.Success) {
+                    try {
+                        val unsent = database.messageDao().getUnsentMessages(owner)
+                        if (unsent.isNotEmpty()) {
+                            Log.d(TAG, "Outbox retry loop checking ${unsent.size} unsent messages")
+                            unsent.forEach { msg ->
+                                val target = msg.receiverAccount
+                                val contact = contacts.value.find { it.account.lowercase(Locale.ROOT).trim() == target }
+                                if (contact != null && contact.status != MSNPProto.Status.OFFLINE && contact.status != "FLN") {
+                                    val text = SafeStorage.decryptText(msg.encryptedText)
+                                    performSendMessageInternal(msg.id, target, text)
+                                }
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Outbox retry loop error: ${e.message}")
+                    }
+                }
+            }
+        }
+    }
+
     private fun performSendMessageInternal(id: Long, target: String, text: String) {
         scope.launch {
+            val normalizedTarget = target.lowercase(Locale.ROOT).trim()
             try {
-                val normalizedTarget = target.lowercase(Locale.ROOT).trim()
                 val contact = contacts.value.find { it.account.lowercase(Locale.ROOT).trim() == normalizedTarget }
                 if (contact == null) {
                     messageManager.updateMessageStatus(id, false, "Contact presence is unavailable")
@@ -350,11 +382,27 @@ class MSNPRepository @Inject constructor(val context: Context) : MSNPProtocolLis
                     return@launch
                 }
                 val session = sessionManager.getOrOpenSession(normalizedTarget)
-                if (session != null) session.sendMessage(text, id)
-                else messageManager.updateMessageStatus(id, false, "Could not open a chat session")
+                if (session != null) {
+                    session.sendMessage(text, id)
+                    messageManager.clearRetries(id)
+                } else {
+                    messageManager.incrementRetry(id)
+                    val retries = messageManager.getRetryCount(id)
+                    if (retries >= 5) {
+                        messageManager.updateMessageStatus(id, false, "Could not open a chat session")
+                    } else {
+                        Log.d(TAG, "Chat session to $normalizedTarget not ready yet (retry $retries/5), message queued in outbox")
+                    }
+                }
             } catch (e: Exception) {
-                Log.e(TAG, "Message $id could not be sent to $target", e)
-                messageManager.updateMessageStatus(id, false, e.message ?: "Send failed")
+                Log.e(TAG, "Message $id could not be sent to $normalizedTarget", e)
+                messageManager.incrementRetry(id)
+                val retries = messageManager.getRetryCount(id)
+                if (retries >= 5) {
+                    messageManager.updateMessageStatus(id, false, e.message ?: "Send failed")
+                } else {
+                    Log.d(TAG, "Send error to $normalizedTarget (retry $retries/5), message queued in outbox: ${e.message}")
+                }
             }
         }
     }
