@@ -1,0 +1,68 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="120"
+    android:viewportHeight="120">
+
+    <!-- Motion lines behind the hand -->
+    <path
+        android:strokeColor="#991F59B1"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M99,30 L113,20" />
+    <path
+        android:strokeColor="#991F59B1"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M103,50 L119,50" />
+    <path
+        android:strokeColor="#991F59B1"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M99,70 L113,80" />
+
+    <!-- Thumb -->
+    <path
+        android:fillColor="#E8B98F"
+        android:strokeColor="#7A4A25"
+        android:strokeWidth="3"
+        android:pathData="M38,60 C27,60 20,67 20,75 C20,84 28,91 38,91 Z" />
+
+    <!-- Wrist -->
+    <path
+        android:fillColor="#E8B98F"
+        android:strokeColor="#7A4A25"
+        android:strokeWidth="3"
+        android:pathData="M48,95 L76,95 L80,116 L44,116 Z" />
+
+    <!-- Back of the fist -->
+    <path
+        android:fillColor="#F6CBA2"
+        android:strokeColor="#7A4A25"
+        android:strokeWidth="3"
+        android:pathData="M36,46 C36,32 45,24 56,24 L72,24 C83,24 90,32 90,46 L90,82 C90,94 82,101 70,101 L56,101 C44,101 36,94 36,82 Z" />
+
+    <!-- Finger creases -->
+    <path
+        android:strokeColor="#7A4A25"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M50,26 L50,44" />
+    <path
+        android:strokeColor="#7A4A25"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M63,25 L63,44" />
+    <path
+        android:strokeColor="#7A4A25"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M76,26 L76,44" />
+
+    <!-- Thumb crease -->
+    <path
+        android:strokeColor="#B97C4B"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:pathData="M28,70 C32,76 35,80 38,82" />
+</vector>

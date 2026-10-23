@@ -249,7 +249,8 @@
                     app:boxCornerRadiusTopEnd="2dp"
                     app:boxCornerRadiusBottomStart="2dp"
                     app:boxCornerRadiusBottomEnd="2dp"
-                    app:passwordToggleEnabled="true"
+                    app:endIconMode="password_toggle"
+                    app:endIconTint="#1F3A60"
                     app:hintEnabled="false">
 
                     <com.google.android.material.textfield.TextInputEditText

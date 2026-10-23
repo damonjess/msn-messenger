@@ -278,6 +278,10 @@ class MSNPRepository @Inject constructor(val context: Context) : MSNPProtocolLis
     }
 
     fun setStatus(status: String) {
+        if (_loginState.value !is MSNPLoginState.Success) {
+            Log.w(TAG, "Ignoring status change to $status: not signed in")
+            return
+        }
         contactManager.updateMyStatus(status)
         nsManager.changeStatus(status)
     }
@@ -355,10 +359,11 @@ class MSNPRepository @Inject constructor(val context: Context) : MSNPProtocolLis
         }
     }
 
-    fun sendNudge(target: String) {
+    /** Returns false when the nudge was throttled and nothing was sent. */
+    fun sendNudge(target: String): Boolean {
         val normalizedTarget = target.lowercase(Locale.ROOT).trim()
         val now = System.currentTimeMillis()
-        if (now - (lastNudgeSent[normalizedTarget] ?: 0L) < UiConstants.NUDGE_THROTTLE_TIMEOUT) return
+        if (now - (lastNudgeSent[normalizedTarget] ?: 0L) < UiConstants.NUDGE_THROTTLE_TIMEOUT) return false
         lastNudgeSent[normalizedTarget] = now
         scope.launch {
             val totalSeconds = (UiConstants.NUDGE_THROTTLE_TIMEOUT / 1000).toInt()
@@ -373,6 +378,7 @@ class MSNPRepository @Inject constructor(val context: Context) : MSNPProtocolLis
             val id = messageManager.saveAndEmitMessage(account, normalizedTarget, "[NUDGE]", false)
             sessionManager.getOrOpenSession(normalizedTarget)?.sendNudge(id) ?: messageManager.updateMessageStatus(id, false, "SB Failed")
         }
+        return true
     }
 
     fun sendTyping(target: String) {

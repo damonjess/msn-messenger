@@ -9,6 +9,7 @@ import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.OvershootInterpolator
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -19,6 +20,7 @@ import com.limpe.tengerium.data.ThemePreset
 import com.limpe.tengerium.data.db.MessageEntity
 import com.limpe.tengerium.databinding.ItemDateHeaderBinding
 import com.limpe.tengerium.databinding.ItemMessageBinding
+import com.limpe.tengerium.databinding.ItemWinkBinding
 import com.limpe.tengerium.data.security.SafeStorage
 import com.limpe.tengerium.data.security.SecurePrefs
 import com.limpe.tengerium.util.AnimationHelper
@@ -37,12 +39,14 @@ sealed class ChatDataItem {
     data class Message(val message: MessageEntity) : ChatDataItem()
     data class DateHeader(val timestamp: Long) : ChatDataItem()
     data class System(val message: MessageEntity) : ChatDataItem()
+    data class WinkMessage(val message: MessageEntity) : ChatDataItem()
 
     val itemId: Long
         get() = when (this) {
             is Message -> message.id
             is DateHeader -> -timestamp // Используем отрицательный timestamp для уникальности
             is System -> message.id
+            is WinkMessage -> message.id
         }
 }
 
@@ -57,6 +61,7 @@ class ChatAdapter(
         private const val VIEW_TYPE_MESSAGE = 0
         private const val VIEW_TYPE_SYSTEM = 1
         private const val VIEW_TYPE_DATE_HEADER = 2
+        private const val VIEW_TYPE_WINK = 3
     }
 
     fun submitMessages(messages: List<MessageEntity>, commitCallback: (() -> Unit)? = null) {
@@ -79,6 +84,8 @@ class ChatAdapter(
             val decryptedText = SafeStorage.decryptText(msg.encryptedText)
             if (decryptedText == "[NUDGE]" || decryptedText == "[JOINED]" || decryptedText == "[LEFT]" || decryptedText.startsWith("[GROUP_UPDATE]")) {
                 items.add(ChatDataItem.System(msg))
+            } else if (WinkCatalog.isWinkMessage(decryptedText)) {
+                items.add(ChatDataItem.WinkMessage(msg))
             } else {
                 items.add(ChatDataItem.Message(msg))
             }
@@ -91,6 +98,7 @@ class ChatAdapter(
             is ChatDataItem.Message -> VIEW_TYPE_MESSAGE
             is ChatDataItem.System -> VIEW_TYPE_SYSTEM
             is ChatDataItem.DateHeader -> VIEW_TYPE_DATE_HEADER
+            is ChatDataItem.WinkMessage -> VIEW_TYPE_WINK
         }
     }
 
@@ -108,6 +116,10 @@ class ChatAdapter(
                 val binding = ItemDateHeaderBinding.inflate(LayoutInflater.from(parent.context), parent, false)
                 SystemViewHolder(binding, securePrefs!!)
             }
+            VIEW_TYPE_WINK -> {
+                val binding = ItemWinkBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+                WinkViewHolder(binding)
+            }
             else -> {
                 val binding = ItemMessageBinding.inflate(LayoutInflater.from(parent.context), parent, false)
                 MessageViewHolder(binding, scope, securePrefs!!, onLongClick)
@@ -120,6 +132,7 @@ class ChatAdapter(
         when (holder) {
             is DateHeaderViewHolder -> (item as? ChatDataItem.DateHeader)?.let { holder.bind(it.timestamp) }
             is SystemViewHolder -> (item as? ChatDataItem.System)?.let { holder.bind(it.message) }
+            is WinkViewHolder -> (item as? ChatDataItem.WinkMessage)?.let { holder.bind(it.message) }
             is MessageViewHolder -> (item as? ChatDataItem.Message)?.let { holder.bind(it.message) }
         }
     }
@@ -158,7 +171,7 @@ class ChatAdapter(
             val decryptedText = SafeStorage.decryptText(message.encryptedText)
             val context = itemView.context
 
-            binding.tvMessageBody.text = decryptedText
+            binding.tvMessageBody.text = FormattingUtils.formatBBCode(decryptedText)
             binding.tvTimestamp.text = timeFormat.format(Date(message.timestamp))
             
             Linkify.addLinks(binding.tvMessageBody, Linkify.WEB_URLS)
@@ -270,6 +283,36 @@ class ChatAdapter(
                 binding.tvLinkDesc.visibility = View.GONE
             } else {
                 binding.tvLinkDesc.visibility = View.VISIBLE
+            }
+        }
+    }
+
+    class WinkViewHolder(private val binding: ItemWinkBinding) : RecyclerView.ViewHolder(binding.root) {
+        fun bind(message: MessageEntity) {
+            val wink = WinkCatalog.fromMessage(SafeStorage.decryptText(message.encryptedText))
+                ?: WinkCatalog.fallback
+            binding.tvWinkEmoji.text = wink.emoji
+            binding.tvWinkName.text = wink.name
+            binding.tvWinkCaption.text = itemView.context.getString(
+                if (message.isIncoming) R.string.wink_received else R.string.wink_sent
+            )
+
+            val isNew = (System.currentTimeMillis() - message.timestamp) < 1500
+            if (isNew) {
+                binding.cardWink.alpha = 0f
+                binding.cardWink.scaleX = 0.6f
+                binding.cardWink.scaleY = 0.6f
+                binding.cardWink.animate()
+                    .alpha(1f)
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .setDuration(320)
+                    .setInterpolator(OvershootInterpolator(2f))
+                    .start()
+            } else {
+                binding.cardWink.alpha = 1f
+                binding.cardWink.scaleX = 1f
+                binding.cardWink.scaleY = 1f
             }
         }
     }

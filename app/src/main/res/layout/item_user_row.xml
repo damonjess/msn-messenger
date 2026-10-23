@@ -24,17 +24,34 @@
         android:layout_height="0dp"
         android:visibility="gone" />
 
-    <TextView
-        android:id="@+id/tvTitle"
+    <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="6dp"
         android:layout_weight="1"
-        android:ellipsize="end"
-        android:maxLines="1"
-        android:textColor="#000000"
-        android:textSize="12sp"
-        tools:text="Charlie Russel (Busy)" />
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="#000000"
+            android:textSize="12sp"
+            tools:text="Charlie Russel (Busy)" />
+
+        <TextView
+            android:id="@+id/tvSubtitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="#555555"
+            android:textSize="11sp"
+            android:visibility="gone"
+            tools:text="Last message content" />
+    </LinearLayout>
 
     <ImageView
         android:id="@+id/ivMuted"
@@ -45,22 +62,19 @@
         android:src="@drawable/ic_notifications_off"
         android:visibility="gone" />
 
-    <TextView
-        android:id="@+id/tvSubtitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:visibility="gone" />
-
     <LinearLayout
         android:id="@+id/layoutTimePin"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
         android:visibility="gone">
 
         <ImageView
             android:id="@+id/ivPinned"
             android:layout_width="12dp"
             android:layout_height="12dp"
+            android:layout_marginEnd="4dp"
             android:contentDescription="@null"
             android:src="@drawable/ic_pin"
             android:visibility="gone" />
@@ -70,13 +84,17 @@
             style="?android:attr/progressBarStyleSmall"
             android:layout_width="10dp"
             android:layout_height="10dp"
+            android:layout_marginEnd="4dp"
             android:visibility="gone" />
 
         <TextView
             android:id="@+id/tvTime"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:visibility="gone" />
+            android:textColor="#888888"
+            android:textSize="10sp"
+            android:visibility="gone"
+            tools:text="12:34" />
     </LinearLayout>
 
     <TextView

@@ -4,9 +4,13 @@ import android.animation.*
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.view.View
+import android.view.ViewGroup
 import android.view.animation.*
+import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.PopupWindow
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.color.MaterialColors
 import com.limpe.tengerium.R
@@ -30,6 +34,119 @@ object AnimationHelper {
             interpolator = CycleInterpolator(5f)
             start()
         }
+    }
+
+    /**
+     * Эффект "стук в экран" при отправке Nudge: рука дважды стучит по окну,
+     * на месте удара расходится кольцо, окно вздрагивает.
+     *
+     * @param onKnock вызывается на каждом ударе (0 — первый, 1 — второй)
+     */
+    fun playNudgeKnock(root: ViewGroup, onKnock: (Int) -> Unit = {}) {
+        if (!root.isAttachedToWindow || root.width == 0 || root.height == 0) return
+
+        val density = root.resources.displayMetrics.density
+        val overlay = FrameLayout(root.context).apply {
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+            isClickable = false
+            isFocusable = false
+        }
+
+        val handSize = (128 * density).toInt()
+        val centerX = root.width * 0.66f
+        val centerY = root.height * 0.38f
+
+        val hand = ImageView(root.context).apply {
+            setImageResource(R.drawable.nudge_hand)
+            scaleType = ImageView.ScaleType.FIT_CENTER
+            alpha = 0f
+        }
+        overlay.addView(hand, FrameLayout.LayoutParams(handSize, handSize).apply {
+            leftMargin = (centerX - handSize / 2f).toInt()
+            topMargin = (centerY - handSize / 2f).toInt()
+        })
+
+        val ringSize = (handSize * 1.35f).toInt()
+        val ring = View(root.context).apply {
+            background = ContextCompat.getDrawable(root.context, R.drawable.nudge_knock_ring)
+            alpha = 0f
+        }
+        overlay.addView(ring, FrameLayout.LayoutParams(ringSize, ringSize).apply {
+            leftMargin = (centerX - ringSize / 2f).toInt()
+            topMargin = (centerY - ringSize / 2f).toInt()
+        })
+
+        root.addView(overlay)
+
+        fun impact() {
+            ring.animate().cancel()
+            ring.scaleX = 0.35f
+            ring.scaleY = 0.35f
+            ring.alpha = 0.85f
+            ring.animate().scaleX(1.6f).scaleY(1.6f).alpha(0f).setDuration(380).start()
+            animateNudge(root)
+        }
+
+        fun knock(index: Int, startDelay: Long) {
+            hand.animate().cancel()
+            hand.translationX = 190 * density
+            hand.translationY = 110 * density
+            hand.rotation = 18f
+            hand.scaleX = 0.9f
+            hand.scaleY = 0.9f
+            hand.alpha = 1f
+            hand.animate()
+                .translationX(0f)
+                .translationY(0f)
+                .rotation(-4f)
+                .scaleX(1.02f)
+                .scaleY(1.02f)
+                .setStartDelay(startDelay)
+                .setDuration(200)
+                .setInterpolator(DecelerateInterpolator())
+                .withEndAction {
+                    onKnock(index)
+                    impact()
+                    hand.animate()
+                        .scaleX(1.16f)
+                        .scaleY(1.16f)
+                        .setDuration(70)
+                        .withEndAction {
+                            hand.animate()
+                                .scaleX(1.02f)
+                                .scaleY(1.02f)
+                                .translationX(46 * density)
+                                .translationY(16 * density)
+                                .rotation(-10f)
+                                .setDuration(140)
+                                .withEndAction {
+                                    if (index == 0) {
+                                        knock(1, 120)
+                                    } else {
+                                        hand.animate()
+                                            .alpha(0f)
+                                            .translationX(240 * density)
+                                            .translationY(130 * density)
+                                            .scaleX(0.8f)
+                                            .scaleY(0.8f)
+                                            .setDuration(220)
+                                            .withEndAction {
+                                                (overlay.parent as? ViewGroup)?.removeView(overlay)
+                                            }
+                                            .start()
+                                    }
+                                }
+                                .start()
+                        }
+                        .start()
+                }
+                .start()
+        }
+
+        knock(0, 0)
     }
 
     /**

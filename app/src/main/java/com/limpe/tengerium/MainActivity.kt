@@ -294,7 +294,12 @@ class MainActivity : AppCompatActivity() {
 
             val viewBinding = ViewInAppNotificationBinding.inflate(LayoutInflater.from(this@MainActivity), binding.notificationContainer, false)
             viewBinding.tvNotificationName.text = FormattingUtils.formatBBCode(incoming.nickname.ifEmpty { incoming.senderAccount })
-            viewBinding.tvNotificationMessage.text = if (incoming.message == "[NUDGE]") getString(R.string.nudge_received) else incoming.message
+            viewBinding.tvNotificationMessage.text = when {
+                incoming.message == "[NUDGE]" -> getString(R.string.nudge_received)
+                else -> com.limpe.tengerium.ui.WinkCatalog.fromMessage(incoming.message)
+                    ?.let { "${it.emoji}  ${it.name}" }
+                    ?: incoming.message
+            }
             val contact = repository.contacts.value.find { it.account.equals(incoming.senderAccount, ignoreCase = true) }
             AvatarUtils.loadAvatar(viewBinding.ivNotificationAvatar, contact?.avatarUrl, incoming.senderAccount)
 

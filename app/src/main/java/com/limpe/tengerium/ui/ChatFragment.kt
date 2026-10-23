@@ -16,6 +16,7 @@ import android.view.animation.AccelerateInterpolator
 import android.view.animation.OvershootInterpolator
 import android.view.inputmethod.EditorInfo
 import android.widget.Button
+import android.widget.PopupMenu
 import android.widget.PopupWindow
 import android.widget.TextView
 import android.widget.Toast
@@ -46,6 +47,8 @@ import com.limpe.tengerium.databinding.LayoutChatMenuBinding
 import com.limpe.tengerium.util.AnimationHelper
 import com.limpe.tengerium.util.ChatHistoryExporter
 import com.limpe.tengerium.util.FormattingUtils
+import com.limpe.tengerium.util.SoundUtils
+import com.limpe.tengerium.util.VibrationHelper
 import com.google.android.material.button.MaterialButton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -182,11 +185,9 @@ class ChatFragment : Fragment() {
         // Formatting Bar items
         binding.btnFormatEmoticon.setOnClickListener { binding.etMessage.append(" :-)") }
         binding.btnFormatVoiceClip.setOnClickListener { chooseFileToSend() }
-        binding.btnFormatWink.setOnClickListener { sendNudge() }
+        binding.btnFormatWink.setOnClickListener { showWinkPicker() }
         binding.btnFormatNudge.setOnClickListener { sendNudge() }
-        binding.btnFormatFont.setOnClickListener {
-            Toast.makeText(requireContext(), "Font formatting menu", Toast.LENGTH_SHORT).show()
-        }
+        binding.btnFormatFont.setOnClickListener { showFontFormattingMenu() }
         binding.btnFormatBackground.setOnClickListener {
             val parent = findMainFragment()
             if (parent != null) {
@@ -197,7 +198,6 @@ class ChatFragment : Fragment() {
         }
 
         // Input & Avatars
-        binding.btnSearch.setOnClickListener { showClearChatDialog() }
         binding.cardContactAvatar.setOnClickListener { openProfile() }
         binding.cardMyAvatar.setOnClickListener {
             val parent = findMainFragment()
@@ -475,9 +475,100 @@ class ChatFragment : Fragment() {
         }
     }
 
+    private fun showWinkPicker() {
+        val account = contactAccount ?: return
+        WinkPickerDialog(requireContext()) { wink ->
+            repository.sendMessage(account, WinkCatalog.marker(wink))
+        }.show()
+    }
+
+    private fun showFontFormattingMenu() {
+        val popup = PopupMenu(requireContext(), binding.btnFormatFont)
+        popup.menu.setGroupCheckable(0, true, false)
+        popup.menu.add(0, 1, 0, R.string.format_bold).apply {
+            isCheckable = true
+            isChecked = isStyleActive("b")
+        }
+        popup.menu.add(0, 2, 1, R.string.format_italic).apply {
+            isCheckable = true
+            isChecked = isStyleActive("i")
+        }
+        popup.menu.add(0, 3, 2, R.string.format_underline).apply {
+            isCheckable = true
+            isChecked = isStyleActive("u")
+        }
+        popup.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                1 -> toggleStyle("b")
+                2 -> toggleStyle("i")
+                3 -> toggleStyle("u")
+            }
+            true
+        }
+        popup.show()
+    }
+
+    private fun isStyleActive(tag: String): Boolean {
+        val et = _binding?.etMessage ?: return false
+        val text = et.text ?: return false
+        val start = minOf(et.selectionStart, et.selectionEnd)
+        val end = maxOf(et.selectionStart, et.selectionEnd)
+        if (start == end) return false
+        val open = "[$tag]"
+        val close = "[/$tag]"
+        return start >= open.length && end + close.length <= text.length &&
+            text.substring(start - open.length, start).equals(open, ignoreCase = true) &&
+            text.substring(end, end + close.length).equals(close, ignoreCase = true)
+    }
+
+    private fun toggleStyle(tag: String) {
+        val et = _binding?.etMessage ?: return
+        val text = et.text ?: return
+        val selectionStart = minOf(et.selectionStart, et.selectionEnd)
+        val selectionEnd = maxOf(et.selectionStart, et.selectionEnd)
+        if (selectionStart < 0 || selectionEnd > text.length) return
+
+        val open = "[$tag]"
+        val close = "[/$tag]"
+
+        if (selectionStart == selectionEnd) {
+            text.insert(selectionStart, open + close)
+            et.setSelection(selectionStart + open.length)
+            return
+        }
+
+        val wrapped = selectionStart >= open.length && selectionEnd + close.length <= text.length &&
+            text.substring(selectionStart - open.length, selectionStart).equals(open, ignoreCase = true) &&
+            text.substring(selectionEnd, selectionEnd + close.length).equals(close, ignoreCase = true)
+
+        if (wrapped) {
+            val innerStart = selectionStart - open.length
+            val innerEnd = selectionEnd - open.length
+            text.delete(selectionEnd, selectionEnd + close.length)
+            text.delete(selectionStart - open.length, selectionStart)
+            et.setSelection(innerStart, innerEnd)
+        } else {
+            text.insert(selectionEnd, close)
+            text.insert(selectionStart, open)
+            et.setSelection(selectionStart + open.length, selectionEnd + open.length)
+        }
+    }
+
     private fun sendNudge() {
         contactAccount?.let { account ->
-            repository.sendNudge(account)
+            if (!repository.sendNudge(account)) {
+                val seconds = repository.nudgeCooldowns.value[account.lowercase(Locale.ROOT).trim()] ?: 0
+                Toast.makeText(requireContext(), getString(R.string.send_nudge_cooldown, seconds), Toast.LENGTH_SHORT).show()
+                return@let
+            }
+            val root = _binding?.root ?: return@let
+            val context = requireContext()
+            AnimationHelper.playNudgeKnock(root) { index ->
+                if (index == 0) {
+                    if (securePrefs.chatSoundsEnabled) SoundUtils.playSound(context, R.raw.nudge)
+                    if (securePrefs.vibrationEnabled) VibrationHelper.vibrateNudge(context)
+                }
+            }
         }
     }
 
@@ -508,7 +599,8 @@ class ChatFragment : Fragment() {
         }
 
         binding.appBarLayout.setBackgroundColor(surfaceColor)
-        binding.layoutInput.setBackgroundColor(surfaceColor)
+        // The message field is always a light MSN-style box, even in dark mode.
+        binding.layoutInput.setBackgroundColor(android.graphics.Color.WHITE)
         binding.toolbar.setBackgroundColor(android.graphics.Color.TRANSPARENT)
         
         binding.appBarLayout.elevation = 0f
@@ -734,7 +826,11 @@ class ChatFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 contactAccount?.let { account ->
-                    
+
+                    launch {
+                        repository.loginState.collectLatest { loadMyAvatar() }
+                    }
+
                     launch {
                         repository.getMessages(account).collectLatest { messages ->
                             binding.layoutEmpty.visibility = if (messages.isEmpty()) View.VISIBLE else View.GONE
@@ -768,16 +864,6 @@ class ChatFragment : Fragment() {
                             binding.tvChatName.text = formattedName
                             binding.tvWindowTitle.text = "$formattedName - Conversation"
                             binding.avatarStatusView.setAvatar(contact?.avatarUrl, account)
-                            
-                            val myAvatarPath = securePrefs.avatarPath
-                            if (!myAvatarPath.isNullOrEmpty()) {
-                                binding.ivMyAvatar.load(File(myAvatarPath)) {
-                                    error(R.drawable.duck)
-                                    placeholder(R.drawable.duck)
-                                }
-                            } else {
-                                binding.ivMyAvatar.setImageResource(R.drawable.duck)
-                            }
                             
                             val status = contact?.status ?: MSNPProto.Status.OFFLINE
                             updateStatusUI(status, contact?.personalMessage)
@@ -814,6 +900,8 @@ class ChatFragment : Fragment() {
                         securePrefs.prefsChangedFlow.collectLatest { key ->
                             if (key == "muted_chats") {
                                 binding.ivChatMuted.visibility = if (securePrefs.isChatMuted(account)) View.VISIBLE else View.GONE
+                            } else if (key == "avatar_path_${myAccountKey()}") {
+                                loadMyAvatar()
                             }
                         }
                     }
@@ -822,6 +910,27 @@ class ChatFragment : Fragment() {
         }
     }
     
+    private fun myAccountKey(): String? =
+        (repository.getCurrentAccount() ?: securePrefs.getSavedAccount())?.lowercase(Locale.ROOT)?.trim()
+
+    private fun loadMyAvatar() {
+        val account = myAccountKey()
+        val state = repository.loginState.value as? MSNPLoginState.Success
+        updateMyAvatar(state?.avatarUrl?.takeIf { it.isNotBlank() } ?: account?.let { securePrefs.getAvatarPath(it) })
+    }
+
+    private fun updateMyAvatar(path: String?) {
+        val avatar = _binding?.ivMyAvatar ?: return
+        if (!path.isNullOrEmpty()) {
+            avatar.load(File(path)) {
+                error(R.drawable.duck)
+                placeholder(R.drawable.duck)
+            }
+        } else {
+            avatar.setImageResource(R.drawable.duck)
+        }
+    }
+
     private fun updateTypingIndicator(isTyping: Boolean) {
         val b = _binding ?: return
         typingJob?.cancel()

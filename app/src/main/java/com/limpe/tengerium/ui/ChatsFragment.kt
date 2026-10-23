@@ -308,10 +308,12 @@ class ChatsFragment : Fragment() {
                     }
                     binding.tvSubtitle.text = spannable
                 } else {
+                    val wink = WinkCatalog.fromMessage(decrypted)
                     val body = when {
                         decrypted == "[JOINED]" -> context.getString(R.string.user_joined_chat, item.senderAccount)
                         decrypted == "[LEFT]" -> context.getString(R.string.user_left_chat, item.senderAccount)
                         decrypted.startsWith("[GROUP_UPDATE]") -> context.getString(R.string.group_participants_updated)
+                        wink != null -> "${wink.emoji}  ${wink.name}"
                         else -> FormattingUtils.formatBBCode(decrypted)
                     }
 
@@ -322,6 +324,8 @@ class ChatsFragment : Fragment() {
                     }
                 }
 
+                binding.tvSubtitle.visibility = View.VISIBLE
+                binding.layoutTimePin.visibility = View.VISIBLE
                 binding.tvTime.visibility = View.VISIBLE
                 binding.tvTime.text = FormattingUtils.formatChatDate(context, item.timestamp)
 

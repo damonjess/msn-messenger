@@ -188,6 +188,18 @@ class MainFragment : Fragment() {
     }
 
     private fun showMsnStatusMenu(anchor: View, repository: MSNPRepository) {
+        if (repository.loginState.value !is MSNPLoginState.Success) {
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.app_name)
+                .setMessage(R.string.sign_in_required_status)
+                .setPositiveButton(R.string.sign_in) { _, _ ->
+                    runCatching { findNavController().navigate(R.id.AuthFragment) }
+                }
+                .setNegativeButton(android.R.string.cancel, null)
+                .show()
+            return
+        }
+
         val popup = androidx.appcompat.widget.PopupMenu(requireContext(), anchor)
         val statuses = listOf(
             getString(R.string.online) to MSNPProto.Status.ONLINE,
@@ -214,8 +226,9 @@ class MainFragment : Fragment() {
     private fun setupMsnMenuBar(repository: MSNPRepository) {
         binding.tvMenuFile?.setOnClickListener { view ->
             val popup = androidx.appcompat.widget.PopupMenu(requireContext(), view)
+            val isSignedIn = repository.loginState.value is MSNPLoginState.Success
             popup.menu.add("My Profile")
-            popup.menu.add("Sign Out")
+            popup.menu.add(if (isSignedIn) "Sign Out" else "Sign In")
             popup.setOnMenuItemClickListener { item ->
                 when (item.title) {
                     "My Profile" -> showDetail(ProfileFragment(), addToBackStack = true)
@@ -223,6 +236,7 @@ class MainFragment : Fragment() {
                         repository.logout()
                         findNavController().navigate(R.id.AuthFragment)
                     }
+                    "Sign In" -> findNavController().navigate(R.id.AuthFragment)
                 }
                 true
             }

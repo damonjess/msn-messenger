@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/colorSurface">
+    android:background="#FFFFFF">
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvChats"
@@ -48,7 +48,7 @@
             android:gravity="center"
             android:text="@string/empty_chats_title"
             android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-            android:textColor="?attr/colorOnSurface"
+            android:textColor="#000000"
             android:textStyle="bold" />
 
         <TextView
@@ -59,7 +59,7 @@
             android:gravity="center"
             android:text="@string/empty_chats_message"
             android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-            android:textColor="?attr/colorOnSurfaceVariant" />
+            android:textColor="#555555" />
 
     </LinearLayout>
 

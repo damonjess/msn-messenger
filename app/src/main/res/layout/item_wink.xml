@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingStart="8dp"
+    android:paddingTop="6dp"
+    android:paddingEnd="8dp"
+    android:paddingBottom="6dp">
+
+    <LinearLayout
+        android:id="@+id/cardWink"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:background="@drawable/bg_wink_card"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:paddingStart="22dp"
+        android:paddingTop="12dp"
+        android:paddingEnd="22dp"
+        android:paddingBottom="10dp">
+
+        <TextView
+            android:id="@+id/tvWinkEmoji"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="58sp" />
+
+        <TextView
+            android:id="@+id/tvWinkName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textColor="#1F3A60"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvWinkCaption"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="1dp"
+            android:textColor="#5B6B80"
+            android:textSize="10sp" />
+    </LinearLayout>
+</FrameLayout>

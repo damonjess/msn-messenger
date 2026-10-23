@@ -667,6 +667,7 @@
                             android:layout_weight="1"
                             android:background="@android:color/transparent"
                             android:hint="@string/type_message"
+                            android:textColorHint="#6B7A90"
                             android:inputType="textMultiLine|textCapSentences"
                             android:maxLines="4"
                             android:minHeight="54dp"
@@ -674,41 +675,20 @@
                             android:textColor="#111111"
                             android:textSize="13sp" />
 
-                        <!-- Stacked Action Buttons: Send & Search -->
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:layout_marginStart="4dp">
-
-                            <!-- Send Button -->
-                            <Button
-                                android:id="@+id/btnSend"
-                                android:layout_width="64dp"
-                                android:layout_height="30dp"
-                                android:background="@drawable/bg_msn_button"
-                                android:padding="0dp"
-                                android:text="Send"
-                                android:textAllCaps="false"
-                                android:textColor="#002B66"
-                                android:textSize="11sp"
-                                android:textStyle="bold"
-                                app:backgroundTint="@null" />
-
-                            <!-- Search Button -->
-                            <Button
-                                android:id="@+id/btnSearch"
-                                android:layout_width="64dp"
-                                android:layout_height="30dp"
-                                android:layout_marginTop="2dp"
-                                android:background="@drawable/bg_msn_button"
-                                android:padding="0dp"
-                                android:text="Search"
-                                android:textAllCaps="false"
-                                android:textColor="#002B66"
-                                android:textSize="11sp"
-                                app:backgroundTint="@null" />
-                        </LinearLayout>
+                        <!-- Send Button -->
+                        <Button
+                            android:id="@+id/btnSend"
+                            android:layout_width="64dp"
+                            android:layout_height="62dp"
+                            android:layout_marginStart="4dp"
+                            android:background="@drawable/bg_msn_button"
+                            android:padding="0dp"
+                            android:text="Send"
+                            android:textAllCaps="false"
+                            android:textColor="#002B66"
+                            android:textSize="11sp"
+                            android:textStyle="bold"
+                            app:backgroundTint="@null" />
                     </LinearLayout>
 
                     <!-- Bottom Input Tabs (Ink & Text) -->
