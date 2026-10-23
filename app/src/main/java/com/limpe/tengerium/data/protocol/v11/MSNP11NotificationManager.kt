@@ -332,26 +332,24 @@ class MSNP11NotificationManager(
         return tid
     }
 
-    override fun addContact(acc: String, mask: Int) {
-        scope.safeLaunch(TAG) {
+    override fun addContact(acc: String, mask: Int, onComplete: (String?) -> Unit) {
+        scope.safeLaunch(TAG, onError = { error -> onComplete(error.message ?: error.javaClass.simpleName) }) {
             try {
                 Log.d(TAG, "Adding contact $acc with mask $mask")
-                
-                // Раньше мы просто вызывали метод и ждали событий через EventHandler.
-                // Теперь мы можем обрабатывать результат прямо здесь для ускорения обновления UI.
-                
+                val client = rustClient ?: throw IllegalStateException("Not connected to the MSN server")
                 if ((mask and MSNPProto.List.FL) != 0) {
-                    val event = rustClient?.addContact(acc, acc, MsnpList.FORWARD_LIST)
-                    event?.let { handleEvent(it) }
-                } else if ((mask and MSNPProto.List.AL) != 0) {
-                    val event = rustClient?.addContact(acc, acc, MsnpList.ALLOW_LIST)
-                    event?.let { handleEvent(it) }
-                } else if ((mask and MSNPProto.List.BL) != 0) {
-                    val event = rustClient?.addContact(acc, acc, MsnpList.BLOCK_LIST)
-                    event?.let { handleEvent(it) }
+                    handleEvent(client.addContact(acc, acc, MsnpList.FORWARD_LIST))
                 }
+                if ((mask and MSNPProto.List.AL) != 0) {
+                    handleEvent(client.addContact(acc, acc, MsnpList.ALLOW_LIST))
+                }
+                if ((mask and MSNPProto.List.BL) != 0) {
+                    handleEvent(client.addContact(acc, acc, MsnpList.BLOCK_LIST))
+                }
+                onComplete(null)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to add contact: ${e.message}")
+                onComplete(e.message ?: e.javaClass.simpleName)
             }
         }
     }

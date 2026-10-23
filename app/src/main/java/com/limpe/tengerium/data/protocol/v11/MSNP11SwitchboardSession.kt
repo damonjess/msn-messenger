@@ -145,6 +145,18 @@ class MSNP11SwitchboardSession(
                                 }
                             }
                         }
+                        is Event.FileTransferRequest -> {
+                            val sender = MSNPUtils.normalizeEmail(event.email)
+                            inactivityJob?.cancel()
+                            listener.onFileTransferRequest(
+                                target = getTarget(sender),
+                                sender = sender,
+                                fileName = event.fileName,
+                                fileSize = event.fileSize,
+                                request = event.request,
+                                session = this@MSNP11SwitchboardSession
+                            )
+                        }
                         is Event.ParticipantInSwitchboard -> {
                             val email = MSNPUtils.normalizeEmail(event.email)
                             val isNew = !participants.contains(email)
@@ -243,15 +255,22 @@ class MSNP11SwitchboardSession(
     override fun sendMessage(text: String, messageId: Long) {
         resetInactivityTimer()
         scope.safeLaunch(TAG) {
-            if (waitForConnection() && rustWrapper != null) {
-                rustWrapper?.sendTextMessage(PlainText(
-                    bold = false, italic = false, underline = false, strikethrough = false,
-                    color = "000000", text = text
-                ))
-                listener.onMessageSent(messageId)
-            } else {
-                Log.w(TAG, "Failed to send message: SB not connected")
-                listener.onMessageFailed(messageId, "Session closed or handshake failed")
+            try {
+                if (waitForConnection() && rustWrapper != null) {
+                    rustWrapper?.sendTextMessage(PlainText(
+                        bold = false, italic = false, underline = false, strikethrough = false,
+                        color = "000000", text = text
+                    ))
+                    listener.onMessageSent(messageId)
+                } else {
+                    Log.w(TAG, "Failed to send message: SB not connected")
+                    listener.onMessageFailed(messageId, "Session closed or handshake failed")
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to send message $messageId", e)
+                listener.onMessageFailed(messageId, e.message ?: e.javaClass.simpleName)
             }
         }
     }
@@ -311,7 +330,38 @@ class MSNP11SwitchboardSession(
         }
     }
     
-    override fun sendFile(account: String, file: File) {}
+    override suspend fun sendFile(account: String, fileName: String, file: File) {
+        inactivityJob?.cancel()
+        try {
+            if (!waitForConnection(timeout = 15000)) {
+                throw IllegalStateException("Switchboard session is not connected")
+            }
+            val wrapper = rustWrapper ?: throw IllegalStateException("Switchboard session is closed")
+            wrapper.sendFile(MSNPUtils.normalizeEmail(account), fileName, file.readBytes())
+        } finally {
+            resetInactivityTimer()
+        }
+    }
+
+    override suspend fun acceptFileRequest(request: FileTransferRequest): ByteArray {
+        inactivityJob?.cancel()
+        try {
+            val wrapper = rustWrapper ?: throw IllegalStateException("Switchboard session is closed")
+            return wrapper.acceptFileRequest(request)
+        } finally {
+            resetInactivityTimer()
+        }
+    }
+
+    override suspend fun declineFileRequest(request: FileTransferRequest) {
+        inactivityJob?.cancel()
+        try {
+            val wrapper = rustWrapper ?: throw IllegalStateException("Switchboard session is closed")
+            wrapper.declineFileRequest(request)
+        } finally {
+            resetInactivityTimer()
+        }
+    }
     override fun inviteParticipant(account: String) { 
         resetInactivityTimer()
         val normalized = MSNPUtils.normalizeEmail(account)

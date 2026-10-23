@@ -13,6 +13,7 @@ Tengerium is an Android client for connecting to MSN Messenger-compatible servic
 - **Messaging & Contacts:**
   - View contacts, status presence, and avatar display pictures.
   - Search roster by name or account, and chat with individual contacts.
+  - Send and receive files in one-to-one chats using the MSNP11 peer-to-peer transfer flow. Transfers are limited to 25 MiB per file.
   - Send nudges with sound/vibration effects, link previews, and custom chat backgrounds.
   - Manage contact requests, groups, and avatar libraries (*Change My Picture*).
   - Sign-out confirmation dialogs and active session management.
@@ -22,7 +23,7 @@ Tengerium is an Android client for connecting to MSN Messenger-compatible servic
   - In-app and system notifications with quick reply options.
   - Local database storage with SQLCipher encryption.
 
-Feature availability depends on the server you connect to.
+Feature availability depends on the server you connect to. File transfers also require the peer's server/client to support MSNP11 P2P transfers.
 
 ## Requirements
 
@@ -69,7 +70,7 @@ On first launch, enter the account and connection details for an MSNP11-compatib
 - Kotlin and AndroidX
 - Material Components and Jetpack Navigation
 - Room with SQLCipher-backed database support
-- [msnp11-sdk](https://github.com/campos02/msnp11-sdk) for MSNP11 protocol support
+- [msnp11-sdk](https://github.com/campos02/msnp11-sdk) for MSNP11 protocol support, including P2P file transfers (native Android libraries and UniFFI bindings generated from revision [ac0e6ed](https://github.com/campos02/msnp11-sdk/commit/ac0e6ed))
 - Firebase Cloud Messaging dependencies for push notifications
 
 ## License

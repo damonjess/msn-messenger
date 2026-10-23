@@ -187,6 +187,16 @@
                 android:orientation="horizontal"
                 android:padding="8dp">
 
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnAttach"
+                    style="@style/Widget.Material3.Button.IconButton"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:contentDescription="@string/attach_file"
+                    app:icon="@drawable/ic_attach_file"
+                    app:iconPadding="0dp"
+                    app:iconSize="22dp" />
+
                 <EditText
                     android:id="@+id/etMessage"
                     android:layout_width="0dp"

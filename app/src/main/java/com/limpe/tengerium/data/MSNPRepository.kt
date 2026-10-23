@@ -19,6 +19,7 @@ import com.limpe.tengerium.util.NetworkObserver
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import uniffi.msnp11_sdk.Config
+import uniffi.msnp11_sdk.FileTransferRequest
 import java.io.File
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
@@ -56,6 +57,8 @@ class MSNPRepository @Inject constructor(val context: Context) : MSNPProtocolLis
     val groups = contactManager.groups
     val incomingMessageFlow = messageManager.incomingMessageFlow
     val contactAddedFlow = contactManager.contactAddedFlow
+    private val _incomingFileTransfers = MutableStateFlow<List<IncomingFileTransfer>>(emptyList())
+    val incomingFileTransfers: StateFlow<List<IncomingFileTransfer>> = _incomingFileTransfers.asStateFlow()
     
     val myStatus = contactManager.myStatus
     val myPersonalMessage = contactManager.myPersonalMessage
@@ -289,6 +292,37 @@ class MSNPRepository @Inject constructor(val context: Context) : MSNPProtocolLis
         }
     }
 
+    suspend fun sendFile(target: String, fileName: String, file: File) {
+        val normalizedTarget = target.lowercase(Locale.ROOT).trim()
+        require(normalizedTarget.contains('@')) { "File sharing is available in one-to-one chats only" }
+        require(file.length() in 1..FileTransferLimits.MAX_FILE_SIZE_BYTES) {
+            "File must be between 1 byte and 25 MiB"
+        }
+        val session = sessionManager.getOrOpenSession(normalizedTarget)
+            ?: throw IllegalStateException("Could not open the chat session")
+        session.sendFile(normalizedTarget, fileName, file)
+    }
+
+    suspend fun acceptIncomingFileTransfer(transfer: IncomingFileTransfer): ByteArray {
+        return try {
+            transfer.session.acceptFileRequest(transfer.request)
+        } finally {
+            removeIncomingFileTransfer(transfer.id)
+        }
+    }
+
+    suspend fun declineIncomingFileTransfer(transfer: IncomingFileTransfer) {
+        try {
+            transfer.session.declineFileRequest(transfer.request)
+        } finally {
+            removeIncomingFileTransfer(transfer.id)
+        }
+    }
+
+    private fun removeIncomingFileTransfer(id: String) {
+        _incomingFileTransfers.update { pending -> pending.filterNot { it.id == id } }
+    }
+
     fun resendMessage(messageId: Long) {
         scope.launch {
             val msg = database.messageDao().getMessageById(messageId) ?: return@launch
@@ -303,15 +337,20 @@ class MSNPRepository @Inject constructor(val context: Context) : MSNPProtocolLis
             try {
                 val normalizedTarget = target.lowercase(Locale.ROOT).trim()
                 val contact = contacts.value.find { it.account.lowercase(Locale.ROOT).trim() == normalizedTarget }
-                if (contact == null || contact.status == MSNPProto.Status.OFFLINE) {
+                if (contact == null) {
+                    messageManager.updateMessageStatus(id, false, "Contact presence is unavailable")
+                    return@launch
+                }
+                if (contact.status == MSNPProto.Status.OFFLINE || contact.status == "FLN") {
                     if (securePrefs.disableMessageQueue) messageManager.updateMessageStatus(id, false, "Offline")
                     return@launch
                 }
                 val session = sessionManager.getOrOpenSession(normalizedTarget)
                 if (session != null) session.sendMessage(text, id)
-                else if (securePrefs.disableMessageQueue) messageManager.updateMessageStatus(id, false, "SB Failed")
+                else messageManager.updateMessageStatus(id, false, "Could not open a chat session")
             } catch (e: Exception) {
-                if (securePrefs.disableMessageQueue) messageManager.updateMessageStatus(id, false, e.message)
+                Log.e(TAG, "Message $id could not be sent to $target", e)
+                messageManager.updateMessageStatus(id, false, e.message ?: "Send failed")
             }
         }
     }
@@ -390,7 +429,8 @@ class MSNPRepository @Inject constructor(val context: Context) : MSNPProtocolLis
         contactManager.updateMyPersonalMessage(psm)
     }
     
-    fun addContact(account: String) = nsManager.addContact(account)
+    fun addContact(account: String, onComplete: (String?) -> Unit = {}) =
+        nsManager.addContact(account.trim(), onComplete = onComplete)
     fun removeContact(account: String, mask: Int = MSNPProto.List.FL) = nsManager.removeContact(account, mask)
     fun blockContact(account: String) = nsManager.blockContact(account)
     fun unblockContact(account: String) = nsManager.unblockContact(account)
@@ -602,6 +642,28 @@ class MSNPRepository @Inject constructor(val context: Context) : MSNPProtocolLis
         scope.launch {
             messageManager.saveAndEmitMessage(getCurrentAccount() ?: "", senderAccount, message, true, nickname)
             MSNPService.showMessageNotification(context, nickname, message, senderAccount)
+        }
+    }
+
+    override fun onFileTransferRequest(
+        target: String,
+        sender: String,
+        fileName: String,
+        fileSize: ULong,
+        request: FileTransferRequest,
+        session: IMSNPSwitchboardSession
+    ) {
+        val transfer = IncomingFileTransfer(
+            id = UUID.randomUUID().toString(),
+            target = target,
+            sender = sender,
+            fileName = fileName,
+            fileSize = fileSize,
+            request = request,
+            session = session
+        )
+        scope.launch {
+            _incomingFileTransfers.update { pending -> pending + transfer }
         }
     }
 

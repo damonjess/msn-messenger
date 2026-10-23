@@ -8,10 +8,12 @@ import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.limpe.tengerium.R
 import com.limpe.tengerium.TengeriumApp
 import com.limpe.tengerium.databinding.FragmentAddContactBinding
+import kotlinx.coroutines.launch
 
 class AddContactFragment : Fragment() {
 
@@ -62,14 +64,18 @@ class AddContactFragment : Fragment() {
         binding.progressBar.visibility = View.VISIBLE
 
         val repository = (requireActivity().application as TengeriumApp).repository
-        
-        try {
-            repository.addContact(email)
-            findNavController().navigateUp()
-        } catch (e: Exception) {
-            binding.btnAdd.isEnabled = true
-            binding.progressBar.visibility = View.GONE
-            Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_LONG).show()
+        repository.addContact(email) { error ->
+            viewLifecycleOwner.lifecycleScope.launch {
+                val currentBinding = _binding ?: return@launch
+                currentBinding.btnAdd.isEnabled = true
+                currentBinding.progressBar.visibility = View.GONE
+                if (error == null) {
+                    Toast.makeText(requireContext(), getString(R.string.contact_add_success, email), Toast.LENGTH_LONG).show()
+                    findNavController().navigateUp()
+                } else {
+                    currentBinding.tilEmail.error = getString(R.string.contact_add_failed, error)
+                }
+            }
         }
     }
 

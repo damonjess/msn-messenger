@@ -17,7 +17,7 @@ interface IMSNPNotificationManager {
     fun updateNickname(nick: String)
     fun updatePersonalMessage(psm: String)
     fun updateAvatar(bytes: ByteArray) {}
-    fun addContact(acc: String, mask: Int = MSNPProto.List.FL or MSNPProto.List.AL)
+    fun addContact(acc: String, mask: Int = MSNPProto.List.FL or MSNPProto.List.AL, onComplete: (String?) -> Unit = {})
     fun removeContact(acc: String, mask: Int = MSNPProto.List.FL)
     fun blockContact(acc: String) {}
     fun unblockContact(acc: String) {}

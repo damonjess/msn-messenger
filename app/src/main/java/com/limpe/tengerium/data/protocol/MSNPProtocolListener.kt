@@ -1,6 +1,7 @@
 package com.limpe.tengerium.data.protocol
 
 import uniffi.msnp11_sdk.Config
+import uniffi.msnp11_sdk.FileTransferRequest
 
 /**
  * Интерфейс для прослушивания событий протокола MSNP.
@@ -60,4 +61,12 @@ interface MSNPProtocolListener {
     fun onGroupAdded(name: String, guid: String) {}
     fun onGroupRemoved(guid: String) {}
     fun onConfigReceived(config: Config) {}
+    fun onFileTransferRequest(
+        target: String,
+        sender: String,
+        fileName: String,
+        fileSize: ULong,
+        request: FileTransferRequest,
+        session: IMSNPSwitchboardSession
+    ) {}
 }

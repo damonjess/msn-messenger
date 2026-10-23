@@ -314,7 +314,7 @@ internal inline fun<T, reified E: Throwable> uniffiTraitInterfaceCallWithError(
         }
     }
 }
-// Initial value and increment amount for handles. 
+// Initial value and increment amount for handles.
 // These ensure that Kotlin-generated handles always have the lowest bit set
 private const val UNIFFI_HANDLEMAP_INITIAL = 1.toLong()
 private const val UNIFFI_HANDLEMAP_DELTA = 2.toLong()
@@ -324,7 +324,7 @@ private const val UNIFFI_HANDLEMAP_DELTA = 2.toLong()
 // This is used pass an opaque 64-bit handle representing a foreign object to the Rust code.
 internal class UniffiHandleMap<T: Any> {
     private val map = ConcurrentHashMap<Long, T>()
-    // Start 
+    // Start
     private val counter = java.util.concurrent.atomic.AtomicLong(UNIFFI_HANDLEMAP_INITIAL)
 
     val size: Int
@@ -711,7 +711,11 @@ internal object IntegrityCheckingUniffiLib {
     ): Short
     external fun uniffi_msnp11_sdk_checksum_method_client_unblock_contact(
     ): Short
+    external fun uniffi_msnp11_sdk_checksum_method_switchboardwrapper_accept_file_request(
+    ): Short
     external fun uniffi_msnp11_sdk_checksum_method_switchboardwrapper_add_event_handler(
+    ): Short
+    external fun uniffi_msnp11_sdk_checksum_method_switchboardwrapper_decline_file_request(
     ): Short
     external fun uniffi_msnp11_sdk_checksum_method_switchboardwrapper_disconnect(
     ): Short
@@ -720,6 +724,8 @@ internal object IntegrityCheckingUniffiLib {
     external fun uniffi_msnp11_sdk_checksum_method_switchboardwrapper_invite(
     ): Short
     external fun uniffi_msnp11_sdk_checksum_method_switchboardwrapper_request_contact_display_picture(
+    ): Short
+    external fun uniffi_msnp11_sdk_checksum_method_switchboardwrapper_send_file(
     ): Short
     external fun uniffi_msnp11_sdk_checksum_method_switchboardwrapper_send_nudge(
     ): Short
@@ -734,41 +740,41 @@ internal object IntegrityCheckingUniffiLib {
     external fun ffi_msnp11_sdk_uniffi_contract_version(
     ): Int
 
-        
+
 }
 
 internal object UniffiLib {
-    
+
     // The Cleaner for the whole library
     internal val CLEANER: UniffiCleaner by lazy {
         UniffiCleaner.create()
     }
-    
+
 
     init {
         Native.register(UniffiLib::class.java, findLibraryName(componentName = "msnp11_sdk"))
         uniffiCallbackInterfaceEventHandler.register(this)
-        
+
     }
-    external fun uniffi_msnp11_sdk_fn_clone_eventhandler(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    external fun uniffi_msnp11_sdk_fn_clone_eventhandler(`handle`: Long,uniffi_out_err: UniffiRustCallStatus,
 ): Long
-external fun uniffi_msnp11_sdk_fn_free_eventhandler(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+external fun uniffi_msnp11_sdk_fn_free_eventhandler(`handle`: Long,uniffi_out_err: UniffiRustCallStatus,
 ): Unit
 external fun uniffi_msnp11_sdk_fn_init_callback_vtable_eventhandler(`vtable`: UniffiVTableCallbackInterfaceEventHandler,
 ): Unit
 external fun uniffi_msnp11_sdk_fn_method_eventhandler_handle(`ptr`: Long,`event`: RustBuffer.ByValue,
 ): Long
-external fun uniffi_msnp11_sdk_fn_clone_client(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+external fun uniffi_msnp11_sdk_fn_clone_client(`handle`: Long,uniffi_out_err: UniffiRustCallStatus,
 ): Long
-external fun uniffi_msnp11_sdk_fn_free_client(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+external fun uniffi_msnp11_sdk_fn_free_client(`handle`: Long,uniffi_out_err: UniffiRustCallStatus,
 ): Unit
-external fun uniffi_msnp11_sdk_fn_constructor_client_new(`server`: RustBuffer.ByValue,`port`: Short,uniffi_out_err: UniffiRustCallStatus, 
+external fun uniffi_msnp11_sdk_fn_constructor_client_new(`server`: RustBuffer.ByValue,`port`: Short,uniffi_out_err: UniffiRustCallStatus,
 ): Long
 external fun uniffi_msnp11_sdk_fn_method_client_add_contact(`ptr`: Long,`email`: RustBuffer.ByValue,`displayName`: RustBuffer.ByValue,`list`: RustBuffer.ByValue,
 ): Long
 external fun uniffi_msnp11_sdk_fn_method_client_add_contact_to_group(`ptr`: Long,`guid`: RustBuffer.ByValue,`groupGuid`: RustBuffer.ByValue,
 ): Long
-external fun uniffi_msnp11_sdk_fn_method_client_add_event_handler(`ptr`: Long,`handler`: Long,uniffi_out_err: UniffiRustCallStatus, 
+external fun uniffi_msnp11_sdk_fn_method_client_add_event_handler(`ptr`: Long,`handler`: Long,uniffi_out_err: UniffiRustCallStatus,
 ): Unit
 external fun uniffi_msnp11_sdk_fn_method_client_block_contact(`ptr`: Long,`email`: RustBuffer.ByValue,
 ): Long
@@ -808,14 +814,18 @@ external fun uniffi_msnp11_sdk_fn_method_client_set_presence(`ptr`: Long,`presen
 ): Long
 external fun uniffi_msnp11_sdk_fn_method_client_unblock_contact(`ptr`: Long,`email`: RustBuffer.ByValue,
 ): Long
-external fun uniffi_msnp11_sdk_fn_clone_switchboardwrapper(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+external fun uniffi_msnp11_sdk_fn_clone_switchboardwrapper(`handle`: Long,uniffi_out_err: UniffiRustCallStatus,
 ): Long
-external fun uniffi_msnp11_sdk_fn_free_switchboardwrapper(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+external fun uniffi_msnp11_sdk_fn_free_switchboardwrapper(`handle`: Long,uniffi_out_err: UniffiRustCallStatus,
 ): Unit
-external fun uniffi_msnp11_sdk_fn_constructor_switchboardwrapper_new(`switchboard`: Long,uniffi_out_err: UniffiRustCallStatus, 
+external fun uniffi_msnp11_sdk_fn_constructor_switchboardwrapper_new(`switchboard`: Long,uniffi_out_err: UniffiRustCallStatus,
 ): Long
-external fun uniffi_msnp11_sdk_fn_method_switchboardwrapper_add_event_handler(`ptr`: Long,`handler`: Long,uniffi_out_err: UniffiRustCallStatus, 
+external fun uniffi_msnp11_sdk_fn_method_switchboardwrapper_accept_file_request(`ptr`: Long,`request`: RustBuffer.ByValue,
+): Long
+external fun uniffi_msnp11_sdk_fn_method_switchboardwrapper_add_event_handler(`ptr`: Long,`handler`: Long,uniffi_out_err: UniffiRustCallStatus,
 ): Unit
+external fun uniffi_msnp11_sdk_fn_method_switchboardwrapper_decline_file_request(`ptr`: Long,`request`: RustBuffer.ByValue,
+): Long
 external fun uniffi_msnp11_sdk_fn_method_switchboardwrapper_disconnect(`ptr`: Long,
 ): Long
 external fun uniffi_msnp11_sdk_fn_method_switchboardwrapper_get_session_id(`ptr`: Long,
@@ -824,23 +834,25 @@ external fun uniffi_msnp11_sdk_fn_method_switchboardwrapper_invite(`ptr`: Long,`
 ): Long
 external fun uniffi_msnp11_sdk_fn_method_switchboardwrapper_request_contact_display_picture(`ptr`: Long,`email`: RustBuffer.ByValue,`msnObject`: RustBuffer.ByValue,
 ): Long
+external fun uniffi_msnp11_sdk_fn_method_switchboardwrapper_send_file(`ptr`: Long,`email`: RustBuffer.ByValue,`fileName`: RustBuffer.ByValue,`file`: RustBuffer.ByValue,
+): Long
 external fun uniffi_msnp11_sdk_fn_method_switchboardwrapper_send_nudge(`ptr`: Long,
 ): Long
 external fun uniffi_msnp11_sdk_fn_method_switchboardwrapper_send_text_message(`ptr`: Long,`message`: RustBuffer.ByValue,
 ): Long
 external fun uniffi_msnp11_sdk_fn_method_switchboardwrapper_send_typing_user(`ptr`: Long,`email`: RustBuffer.ByValue,
 ): Long
-external fun uniffi_msnp11_sdk_fn_clone_switchboard(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+external fun uniffi_msnp11_sdk_fn_clone_switchboard(`handle`: Long,uniffi_out_err: UniffiRustCallStatus,
 ): Long
-external fun uniffi_msnp11_sdk_fn_free_switchboard(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+external fun uniffi_msnp11_sdk_fn_free_switchboard(`handle`: Long,uniffi_out_err: UniffiRustCallStatus,
 ): Unit
-external fun ffi_msnp11_sdk_rustbuffer_alloc(`size`: Long,uniffi_out_err: UniffiRustCallStatus, 
+external fun ffi_msnp11_sdk_rustbuffer_alloc(`size`: Long,uniffi_out_err: UniffiRustCallStatus,
 ): RustBuffer.ByValue
-external fun ffi_msnp11_sdk_rustbuffer_from_bytes(`bytes`: ForeignBytes.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+external fun ffi_msnp11_sdk_rustbuffer_from_bytes(`bytes`: ForeignBytes.ByValue,uniffi_out_err: UniffiRustCallStatus,
 ): RustBuffer.ByValue
-external fun ffi_msnp11_sdk_rustbuffer_free(`buf`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+external fun ffi_msnp11_sdk_rustbuffer_free(`buf`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus,
 ): Unit
-external fun ffi_msnp11_sdk_rustbuffer_reserve(`buf`: RustBuffer.ByValue,`additional`: Long,uniffi_out_err: UniffiRustCallStatus, 
+external fun ffi_msnp11_sdk_rustbuffer_reserve(`buf`: RustBuffer.ByValue,`additional`: Long,uniffi_out_err: UniffiRustCallStatus,
 ): RustBuffer.ByValue
 external fun ffi_msnp11_sdk_rust_future_poll_u8(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
 ): Unit
@@ -848,7 +860,7 @@ external fun ffi_msnp11_sdk_rust_future_cancel_u8(`handle`: Long,
 ): Unit
 external fun ffi_msnp11_sdk_rust_future_free_u8(`handle`: Long,
 ): Unit
-external fun ffi_msnp11_sdk_rust_future_complete_u8(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+external fun ffi_msnp11_sdk_rust_future_complete_u8(`handle`: Long,uniffi_out_err: UniffiRustCallStatus,
 ): Byte
 external fun ffi_msnp11_sdk_rust_future_poll_i8(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
 ): Unit
@@ -856,7 +868,7 @@ external fun ffi_msnp11_sdk_rust_future_cancel_i8(`handle`: Long,
 ): Unit
 external fun ffi_msnp11_sdk_rust_future_free_i8(`handle`: Long,
 ): Unit
-external fun ffi_msnp11_sdk_rust_future_complete_i8(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+external fun ffi_msnp11_sdk_rust_future_complete_i8(`handle`: Long,uniffi_out_err: UniffiRustCallStatus,
 ): Byte
 external fun ffi_msnp11_sdk_rust_future_poll_u16(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
 ): Unit
@@ -864,7 +876,7 @@ external fun ffi_msnp11_sdk_rust_future_cancel_u16(`handle`: Long,
 ): Unit
 external fun ffi_msnp11_sdk_rust_future_free_u16(`handle`: Long,
 ): Unit
-external fun ffi_msnp11_sdk_rust_future_complete_u16(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+external fun ffi_msnp11_sdk_rust_future_complete_u16(`handle`: Long,uniffi_out_err: UniffiRustCallStatus,
 ): Short
 external fun ffi_msnp11_sdk_rust_future_poll_i16(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
 ): Unit
@@ -872,7 +884,7 @@ external fun ffi_msnp11_sdk_rust_future_cancel_i16(`handle`: Long,
 ): Unit
 external fun ffi_msnp11_sdk_rust_future_free_i16(`handle`: Long,
 ): Unit
-external fun ffi_msnp11_sdk_rust_future_complete_i16(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+external fun ffi_msnp11_sdk_rust_future_complete_i16(`handle`: Long,uniffi_out_err: UniffiRustCallStatus,
 ): Short
 external fun ffi_msnp11_sdk_rust_future_poll_u32(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
 ): Unit
@@ -880,7 +892,7 @@ external fun ffi_msnp11_sdk_rust_future_cancel_u32(`handle`: Long,
 ): Unit
 external fun ffi_msnp11_sdk_rust_future_free_u32(`handle`: Long,
 ): Unit
-external fun ffi_msnp11_sdk_rust_future_complete_u32(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+external fun ffi_msnp11_sdk_rust_future_complete_u32(`handle`: Long,uniffi_out_err: UniffiRustCallStatus,
 ): Int
 external fun ffi_msnp11_sdk_rust_future_poll_i32(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
 ): Unit
@@ -888,7 +900,7 @@ external fun ffi_msnp11_sdk_rust_future_cancel_i32(`handle`: Long,
 ): Unit
 external fun ffi_msnp11_sdk_rust_future_free_i32(`handle`: Long,
 ): Unit
-external fun ffi_msnp11_sdk_rust_future_complete_i32(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+external fun ffi_msnp11_sdk_rust_future_complete_i32(`handle`: Long,uniffi_out_err: UniffiRustCallStatus,
 ): Int
 external fun ffi_msnp11_sdk_rust_future_poll_u64(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
 ): Unit
@@ -896,7 +908,7 @@ external fun ffi_msnp11_sdk_rust_future_cancel_u64(`handle`: Long,
 ): Unit
 external fun ffi_msnp11_sdk_rust_future_free_u64(`handle`: Long,
 ): Unit
-external fun ffi_msnp11_sdk_rust_future_complete_u64(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+external fun ffi_msnp11_sdk_rust_future_complete_u64(`handle`: Long,uniffi_out_err: UniffiRustCallStatus,
 ): Long
 external fun ffi_msnp11_sdk_rust_future_poll_i64(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
 ): Unit
@@ -904,7 +916,7 @@ external fun ffi_msnp11_sdk_rust_future_cancel_i64(`handle`: Long,
 ): Unit
 external fun ffi_msnp11_sdk_rust_future_free_i64(`handle`: Long,
 ): Unit
-external fun ffi_msnp11_sdk_rust_future_complete_i64(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+external fun ffi_msnp11_sdk_rust_future_complete_i64(`handle`: Long,uniffi_out_err: UniffiRustCallStatus,
 ): Long
 external fun ffi_msnp11_sdk_rust_future_poll_f32(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
 ): Unit
@@ -912,7 +924,7 @@ external fun ffi_msnp11_sdk_rust_future_cancel_f32(`handle`: Long,
 ): Unit
 external fun ffi_msnp11_sdk_rust_future_free_f32(`handle`: Long,
 ): Unit
-external fun ffi_msnp11_sdk_rust_future_complete_f32(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+external fun ffi_msnp11_sdk_rust_future_complete_f32(`handle`: Long,uniffi_out_err: UniffiRustCallStatus,
 ): Float
 external fun ffi_msnp11_sdk_rust_future_poll_f64(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
 ): Unit
@@ -920,7 +932,7 @@ external fun ffi_msnp11_sdk_rust_future_cancel_f64(`handle`: Long,
 ): Unit
 external fun ffi_msnp11_sdk_rust_future_free_f64(`handle`: Long,
 ): Unit
-external fun ffi_msnp11_sdk_rust_future_complete_f64(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+external fun ffi_msnp11_sdk_rust_future_complete_f64(`handle`: Long,uniffi_out_err: UniffiRustCallStatus,
 ): Double
 external fun ffi_msnp11_sdk_rust_future_poll_rust_buffer(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
 ): Unit
@@ -928,7 +940,7 @@ external fun ffi_msnp11_sdk_rust_future_cancel_rust_buffer(`handle`: Long,
 ): Unit
 external fun ffi_msnp11_sdk_rust_future_free_rust_buffer(`handle`: Long,
 ): Unit
-external fun ffi_msnp11_sdk_rust_future_complete_rust_buffer(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+external fun ffi_msnp11_sdk_rust_future_complete_rust_buffer(`handle`: Long,uniffi_out_err: UniffiRustCallStatus,
 ): RustBuffer.ByValue
 external fun ffi_msnp11_sdk_rust_future_poll_void(`handle`: Long,`callback`: UniffiRustFutureContinuationCallback,`callbackData`: Long,
 ): Unit
@@ -936,10 +948,10 @@ external fun ffi_msnp11_sdk_rust_future_cancel_void(`handle`: Long,
 ): Unit
 external fun ffi_msnp11_sdk_rust_future_free_void(`handle`: Long,
 ): Unit
-external fun ffi_msnp11_sdk_rust_future_complete_void(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+external fun ffi_msnp11_sdk_rust_future_complete_void(`handle`: Long,uniffi_out_err: UniffiRustCallStatus,
 ): Unit
 
-    
+
 }
 
 private fun uniffiCheckContractApiVersion(lib: IntegrityCheckingUniffiLib) {
@@ -1022,7 +1034,13 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_msnp11_sdk_checksum_method_client_unblock_contact() != 6022.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_msnp11_sdk_checksum_method_switchboardwrapper_accept_file_request() != 40038.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_msnp11_sdk_checksum_method_switchboardwrapper_add_event_handler() != 16065.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_msnp11_sdk_checksum_method_switchboardwrapper_decline_file_request() != 21317.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_msnp11_sdk_checksum_method_switchboardwrapper_disconnect() != 7109.toShort()) {
@@ -1035,6 +1053,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_msnp11_sdk_checksum_method_switchboardwrapper_request_contact_display_picture() != 14968.toShort()) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_msnp11_sdk_checksum_method_switchboardwrapper_send_file() != 38514.toShort()) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_msnp11_sdk_checksum_method_switchboardwrapper_send_nudge() != 44152.toShort()) {
@@ -1256,7 +1277,7 @@ inline fun <T : Disposable?, R> T.use(block: (T) -> R) =
         }
     }
 
-/** 
+/**
  * Placeholder object used to signal that we're constructing an interface with a FFI handle.
  *
  * This is the first argument for interface constructors that input a raw handle. It exists is that
@@ -1267,7 +1288,7 @@ inline fun <T : Disposable?, R> T.use(block: (T) -> R) =
  * */
 object UniffiWithHandle
 
-/** 
+/**
  * Used to instantiate an interface without an actual pointer, for fakes in tests, mostly.
  *
  * @suppress
@@ -1610,52 +1631,52 @@ public object FfiConverterByteArray: FfiConverterRustBuffer<ByteArray> {
  * Defines the client itself, all Notification Server actions are done through an instance of this struct.
  */
 public interface ClientInterface {
-    
+
     /**
      * Adds a contact to a specified list, also setting its display name if applicable.
      */
     suspend fun `addContact`(`email`: kotlin.String, `displayName`: kotlin.String, `list`: MsnpList): Event
-    
+
     /**
      * Adds a contact to a group.
      */
     suspend fun `addContactToGroup`(`guid`: kotlin.String, `groupGuid`: kotlin.String)
-    
+
     /**
      * Adds a new handler that implements the [EventHandler] trait.
      */
     fun `addEventHandler`(`handler`: EventHandler)
-    
+
     /**
      * Blocks a contact.
      */
     suspend fun `blockContact`(`email`: kotlin.String)
-    
+
     /**
      * Creates a new contact group.
      */
     suspend fun `createGroup`(`name`: kotlin.String)
-    
+
     /**
      * Creates and returns a new Switchboard session with the specified contact.
      */
     suspend fun `createSession`(`email`: kotlin.String): Switchboard
-    
+
     /**
      * Deletes a contact group.
      */
     suspend fun `deleteGroup`(`guid`: kotlin.String)
-    
+
     /**
      * Disconnects from the server.
      */
     suspend fun `disconnect`()
-    
+
     /**
      * Makes a request to get the config file (containing tabs and the MSN Today url) and returns it.
      */
     suspend fun `getConfig`(`configUrl`: kotlin.String): Config
-    
+
     /**
      * Does the MSNP authentication process. Also starts regular pings and the handler for Switchboard invitations.
      *
@@ -1665,69 +1686,69 @@ public interface ClientInterface {
      * will return an [Authenticated][Event::Authenticated] event.
      */
     suspend fun `login`(`email`: kotlin.String, `password`: kotlin.String, `nexusUrl`: kotlin.String, `clientName`: kotlin.String, `version`: kotlin.String): Event
-    
+
     /**
      * Removes a contact from a specified list (except the forward list, which requires calling
      * [remove_contact_from_forward_list][Client::remove_contact_from_forward_list]).
      */
     suspend fun `removeContact`(`email`: kotlin.String, `list`: MsnpList)
-    
+
     /**
      * Removes a contact from the forward list.
      */
     suspend fun `removeContactFromForwardList`(`guid`: kotlin.String)
-    
+
     /**
      * Removes a contact from a group.
      */
     suspend fun `removeContactFromGroup`(`guid`: kotlin.String, `groupGuid`: kotlin.String)
-    
+
     /**
      * Renames a contact group.
      */
     suspend fun `renameGroup`(`guid`: kotlin.String, `newName`: kotlin.String)
-    
+
     /**
      * Sets the GTC value, which can be either `AL` or `BL`.
      */
     suspend fun `setBlp`(`blp`: kotlin.String)
-    
+
     /**
      * Sets a contact's display name.
      */
     suspend fun `setContactDisplayName`(`guid`: kotlin.String, `displayName`: kotlin.String)
-    
+
     /**
      * Sets the user's display name.
      */
     suspend fun `setDisplayName`(`displayName`: kotlin.String)
-    
+
     /**
      * Sets the user's display picture, returning a standard base64 encoded hash of it.
      * This method uses the picture's binary data, and scaling down beforehand to a size like 200x200 is recommended.
      */
     suspend fun `setDisplayPicture`(`displayPicture`: kotlin.ByteArray): kotlin.String
-    
+
     /**
      * Sets the GTC value, which can be either `A` or `N`.
      */
     suspend fun `setGtc`(`gtc`: kotlin.String)
-    
+
     /**
      * Sets the user's personal message.
      */
     suspend fun `setPersonalMessage`(`personalMessage`: PersonalMessage)
-    
+
     /**
      * Sets the user's presence status.
      */
     suspend fun `setPresence`(`presence`: MsnpStatus)
-    
+
     /**
      * Unblocks a contact.
      */
     suspend fun `unblockContact`(`email`: kotlin.String)
-    
+
     companion object
 }
 
@@ -1762,10 +1783,10 @@ open class Client: Disposable, AutoCloseable, ClientInterface
      * Connects to the server, defines the channels and returns a new instance.
      */
     constructor(`server`: kotlin.String, `port`: kotlin.UShort) :
-        this(UniffiWithHandle, 
+        this(UniffiWithHandle,
     uniffiRustCallWithError(SdkException) { _status ->
     UniffiLib.uniffi_msnp11_sdk_fn_constructor_client_new(
-    
+
         FfiConverterString.lower(`server`),FfiConverterUShort.lower(`port`),_status)
 }
     )
@@ -1841,7 +1862,7 @@ open class Client: Disposable, AutoCloseable, ClientInterface
         }
     }
 
-    
+
     /**
      * Adds a contact to a specified list, also setting its display name if applicable.
      */
@@ -1865,7 +1886,7 @@ open class Client: Disposable, AutoCloseable, ClientInterface
     )
     }
 
-    
+
     /**
      * Adds a contact to a group.
      */
@@ -1884,17 +1905,17 @@ open class Client: Disposable, AutoCloseable, ClientInterface
         { future -> UniffiLib.ffi_msnp11_sdk_rust_future_free_void(future) },
         // lift function
         { Unit },
-        
+
         // Error FFI converter
         ContactException.ErrorHandler,
     )
     }
 
-    
+
     /**
      * Adds a new handler that implements the [EventHandler] trait.
      */override fun `addEventHandler`(`handler`: EventHandler)
-        = 
+        =
     callWithHandle {
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_msnp11_sdk_fn_method_client_add_event_handler(
@@ -1902,10 +1923,10 @@ open class Client: Disposable, AutoCloseable, ClientInterface
         FfiConverterTypeEventHandler.lower(`handler`),_status)
 }
     }
-    
-    
 
-    
+
+
+
     /**
      * Blocks a contact.
      */
@@ -1924,13 +1945,13 @@ open class Client: Disposable, AutoCloseable, ClientInterface
         { future -> UniffiLib.ffi_msnp11_sdk_rust_future_free_void(future) },
         // lift function
         { Unit },
-        
+
         // Error FFI converter
         ContactException.ErrorHandler,
     )
     }
 
-    
+
     /**
      * Creates a new contact group.
      */
@@ -1949,13 +1970,13 @@ open class Client: Disposable, AutoCloseable, ClientInterface
         { future -> UniffiLib.ffi_msnp11_sdk_rust_future_free_void(future) },
         // lift function
         { Unit },
-        
+
         // Error FFI converter
         ContactException.ErrorHandler,
     )
     }
 
-    
+
     /**
      * Creates and returns a new Switchboard session with the specified contact.
      */
@@ -1979,7 +2000,7 @@ open class Client: Disposable, AutoCloseable, ClientInterface
     )
     }
 
-    
+
     /**
      * Deletes a contact group.
      */
@@ -1998,13 +2019,13 @@ open class Client: Disposable, AutoCloseable, ClientInterface
         { future -> UniffiLib.ffi_msnp11_sdk_rust_future_free_void(future) },
         // lift function
         { Unit },
-        
+
         // Error FFI converter
         ContactException.ErrorHandler,
     )
     }
 
-    
+
     /**
      * Disconnects from the server.
      */
@@ -2015,7 +2036,7 @@ open class Client: Disposable, AutoCloseable, ClientInterface
         callWithHandle { uniffiHandle ->
             UniffiLib.uniffi_msnp11_sdk_fn_method_client_disconnect(
                 uniffiHandle,
-                
+
             )
         },
         { future, callback, continuation -> UniffiLib.ffi_msnp11_sdk_rust_future_poll_void(future, callback, continuation) },
@@ -2023,13 +2044,13 @@ open class Client: Disposable, AutoCloseable, ClientInterface
         { future -> UniffiLib.ffi_msnp11_sdk_rust_future_free_void(future) },
         // lift function
         { Unit },
-        
+
         // Error FFI converter
         SdkException.ErrorHandler,
     )
     }
 
-    
+
     /**
      * Makes a request to get the config file (containing tabs and the MSN Today url) and returns it.
      */
@@ -2053,7 +2074,7 @@ open class Client: Disposable, AutoCloseable, ClientInterface
     )
     }
 
-    
+
     /**
      * Does the MSNP authentication process. Also starts regular pings and the handler for Switchboard invitations.
      *
@@ -2082,7 +2103,7 @@ open class Client: Disposable, AutoCloseable, ClientInterface
     )
     }
 
-    
+
     /**
      * Removes a contact from a specified list (except the forward list, which requires calling
      * [remove_contact_from_forward_list][Client::remove_contact_from_forward_list]).
@@ -2102,13 +2123,13 @@ open class Client: Disposable, AutoCloseable, ClientInterface
         { future -> UniffiLib.ffi_msnp11_sdk_rust_future_free_void(future) },
         // lift function
         { Unit },
-        
+
         // Error FFI converter
         ContactException.ErrorHandler,
     )
     }
 
-    
+
     /**
      * Removes a contact from the forward list.
      */
@@ -2127,13 +2148,13 @@ open class Client: Disposable, AutoCloseable, ClientInterface
         { future -> UniffiLib.ffi_msnp11_sdk_rust_future_free_void(future) },
         // lift function
         { Unit },
-        
+
         // Error FFI converter
         ContactException.ErrorHandler,
     )
     }
 
-    
+
     /**
      * Removes a contact from a group.
      */
@@ -2152,13 +2173,13 @@ open class Client: Disposable, AutoCloseable, ClientInterface
         { future -> UniffiLib.ffi_msnp11_sdk_rust_future_free_void(future) },
         // lift function
         { Unit },
-        
+
         // Error FFI converter
         ContactException.ErrorHandler,
     )
     }
 
-    
+
     /**
      * Renames a contact group.
      */
@@ -2177,13 +2198,13 @@ open class Client: Disposable, AutoCloseable, ClientInterface
         { future -> UniffiLib.ffi_msnp11_sdk_rust_future_free_void(future) },
         // lift function
         { Unit },
-        
+
         // Error FFI converter
         ContactException.ErrorHandler,
     )
     }
 
-    
+
     /**
      * Sets the GTC value, which can be either `AL` or `BL`.
      */
@@ -2202,13 +2223,13 @@ open class Client: Disposable, AutoCloseable, ClientInterface
         { future -> UniffiLib.ffi_msnp11_sdk_rust_future_free_void(future) },
         // lift function
         { Unit },
-        
+
         // Error FFI converter
         SdkException.ErrorHandler,
     )
     }
 
-    
+
     /**
      * Sets a contact's display name.
      */
@@ -2227,13 +2248,13 @@ open class Client: Disposable, AutoCloseable, ClientInterface
         { future -> UniffiLib.ffi_msnp11_sdk_rust_future_free_void(future) },
         // lift function
         { Unit },
-        
+
         // Error FFI converter
         ContactException.ErrorHandler,
     )
     }
 
-    
+
     /**
      * Sets the user's display name.
      */
@@ -2252,13 +2273,13 @@ open class Client: Disposable, AutoCloseable, ClientInterface
         { future -> UniffiLib.ffi_msnp11_sdk_rust_future_free_void(future) },
         // lift function
         { Unit },
-        
+
         // Error FFI converter
         SdkException.ErrorHandler,
     )
     }
 
-    
+
     /**
      * Sets the user's display picture, returning a standard base64 encoded hash of it.
      * This method uses the picture's binary data, and scaling down beforehand to a size like 200x200 is recommended.
@@ -2283,7 +2304,7 @@ open class Client: Disposable, AutoCloseable, ClientInterface
     )
     }
 
-    
+
     /**
      * Sets the GTC value, which can be either `A` or `N`.
      */
@@ -2302,13 +2323,13 @@ open class Client: Disposable, AutoCloseable, ClientInterface
         { future -> UniffiLib.ffi_msnp11_sdk_rust_future_free_void(future) },
         // lift function
         { Unit },
-        
+
         // Error FFI converter
         SdkException.ErrorHandler,
     )
     }
 
-    
+
     /**
      * Sets the user's personal message.
      */
@@ -2327,13 +2348,13 @@ open class Client: Disposable, AutoCloseable, ClientInterface
         { future -> UniffiLib.ffi_msnp11_sdk_rust_future_free_void(future) },
         // lift function
         { Unit },
-        
+
         // Error FFI converter
         SdkException.ErrorHandler,
     )
     }
 
-    
+
     /**
      * Sets the user's presence status.
      */
@@ -2352,13 +2373,13 @@ open class Client: Disposable, AutoCloseable, ClientInterface
         { future -> UniffiLib.ffi_msnp11_sdk_rust_future_free_void(future) },
         // lift function
         { Unit },
-        
+
         // Error FFI converter
         SdkException.ErrorHandler,
     )
     }
 
-    
+
     /**
      * Unblocks a contact.
      */
@@ -2377,24 +2398,24 @@ open class Client: Disposable, AutoCloseable, ClientInterface
         { future -> UniffiLib.ffi_msnp11_sdk_rust_future_free_void(future) },
         // lift function
         { Unit },
-        
+
         // Error FFI converter
         ContactException.ErrorHandler,
     )
     }
 
-    
-
-    
 
 
-    
-    
+
+
+
+
+
     /**
      * @suppress
      */
     companion object
-    
+
 }
 
 
@@ -2522,9 +2543,9 @@ public object FfiConverterTypeClient: FfiConverter<Client, Long> {
  * the preferred handling method is closures.
  */
 public interface EventHandler {
-    
+
     suspend fun `handle`(`event`: Event)
-    
+
     companion object
 }
 
@@ -2628,7 +2649,7 @@ open class EventHandlerImpl: Disposable, AutoCloseable, EventHandler
         }
     }
 
-    
+
     @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
     override suspend fun `handle`(`event`: Event) {
         return uniffiRustCallAsync(
@@ -2643,24 +2664,24 @@ open class EventHandlerImpl: Disposable, AutoCloseable, EventHandler
         { future -> UniffiLib.ffi_msnp11_sdk_rust_future_free_void(future) },
         // lift function
         { Unit },
-        
+
         // Error FFI converter
         UniffiNullRustCallStatusErrorHandler,
     )
     }
 
-    
-
-    
 
 
-    
-    
+
+
+
+
+
     /**
      * @suppress
      */
     companion object
-    
+
 }
 
 
@@ -2863,7 +2884,7 @@ public object FfiConverterTypeEventHandler: FfiConverter<EventHandler, Long> {
  * window is opened and leave it once it's closed.
  */
 public interface SwitchboardInterface {
-    
+
     companion object
 }
 
@@ -2967,18 +2988,18 @@ open class Switchboard: Disposable, AutoCloseable, SwitchboardInterface
         }
     }
 
-    
-
-    
 
 
-    
-    
+
+
+
+
+
     /**
      * @suppress
      */
     companion object
-    
+
 }
 
 
@@ -3108,48 +3129,68 @@ public object FfiConverterTypeSwitchboard: FfiConverter<Switchboard, Long> {
  * window is opened and leave it once it's closed.
  */
 public interface SwitchboardWrapperInterface {
-    
+
+    /**
+     * Accepts a file transfer request from a participant. This returns the file data if the transfer
+     * was successful.
+     *
+     * The `request` argument comes from the [FileTransferRequest][Event::FileTransferRequest] event.
+     */
+    suspend fun `acceptFileRequest`(`request`: FileTransferRequest): kotlin.ByteArray
+
     /**
      * Adds a new handler that implements the [EventHandler] trait.
      */
     fun `addEventHandler`(`handler`: EventHandler)
-    
+
+    /**
+     * Declines a file transfer request.
+     *
+     * The `request` argument comes from the [FileTransferRequest][Event::FileTransferRequest] event.
+     */
+    suspend fun `declineFileRequest`(`request`: FileTransferRequest)
+
     /**
      * Disconnects from the Switchboard.
      */
     suspend fun `disconnect`()
-    
+
     /**
      * Returns the session ID, if defined.
      */
     suspend fun `getSessionId`(): kotlin.String
-    
+
     /**
      * Invites a new contact to this switchboard session. This makes it a temporary group chat.
      */
     suspend fun `invite`(`email`: kotlin.String)
-    
+
     /**
      * Requests a contact's display picture and handles the transfer process. A [DisplayPicture][Event::DisplayPicture] event
      * is received once the transfer is complete.
      */
     suspend fun `requestContactDisplayPicture`(`email`: kotlin.String, `msnObject`: kotlin.String)
-    
+
+    /**
+     * Sends a file to a participant. This returns once the transfer is complete.
+     */
+    suspend fun `sendFile`(`email`: kotlin.String, `fileName`: kotlin.String, `file`: kotlin.ByteArray)
+
     /**
      * Sends a nudge to the session.
      */
     suspend fun `sendNudge`()
-    
+
     /**
      * Sends a plain text message to the session.
      */
     suspend fun `sendTextMessage`(`message`: PlainText)
-    
+
     /**
      * Sends an "is writing..." notification to the session.
      */
     suspend fun `sendTypingUser`(`email`: kotlin.String)
-    
+
     companion object
 }
 
@@ -3187,10 +3228,10 @@ open class SwitchboardWrapper: Disposable, AutoCloseable, SwitchboardWrapperInte
      * Create new wrapper instance with an obtained [Switchboard][crate::switchboard_server::switchboard_server::Switchboard].
      */
     constructor(`switchboard`: Switchboard) :
-        this(UniffiWithHandle, 
+        this(UniffiWithHandle,
     uniffiRustCallWithError(SdkException) { _status ->
     UniffiLib.uniffi_msnp11_sdk_fn_constructor_switchboardwrapper_new(
-    
+
         FfiConverterTypeSwitchboard.lower(`switchboard`),_status)
 }
     )
@@ -3266,11 +3307,38 @@ open class SwitchboardWrapper: Disposable, AutoCloseable, SwitchboardWrapperInte
         }
     }
 
-    
+
+    /**
+     * Accepts a file transfer request from a participant. This returns the file data if the transfer
+     * was successful.
+     *
+     * The `request` argument comes from the [FileTransferRequest][Event::FileTransferRequest] event.
+     */
+    @Throws(P2pException::class)
+    @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
+    override suspend fun `acceptFileRequest`(`request`: FileTransferRequest) : kotlin.ByteArray {
+        return uniffiRustCallAsync(
+        callWithHandle { uniffiHandle ->
+            UniffiLib.uniffi_msnp11_sdk_fn_method_switchboardwrapper_accept_file_request(
+                uniffiHandle,
+                FfiConverterTypeFileTransferRequest.lower(`request`),
+            )
+        },
+        { future, callback, continuation -> UniffiLib.ffi_msnp11_sdk_rust_future_poll_rust_buffer(future, callback, continuation) },
+        { future, continuation -> UniffiLib.ffi_msnp11_sdk_rust_future_complete_rust_buffer(future, continuation) },
+        { future -> UniffiLib.ffi_msnp11_sdk_rust_future_free_rust_buffer(future) },
+        // lift function
+        { FfiConverterByteArray.lift(it) },
+        // Error FFI converter
+        P2pException.ErrorHandler,
+    )
+    }
+
+
     /**
      * Adds a new handler that implements the [EventHandler] trait.
      */override fun `addEventHandler`(`handler`: EventHandler)
-        = 
+        =
     callWithHandle {
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_msnp11_sdk_fn_method_switchboardwrapper_add_event_handler(
@@ -3278,10 +3346,37 @@ open class SwitchboardWrapper: Disposable, AutoCloseable, SwitchboardWrapperInte
         FfiConverterTypeEventHandler.lower(`handler`),_status)
 }
     }
-    
-    
 
-    
+
+
+
+    /**
+     * Declines a file transfer request.
+     *
+     * The `request` argument comes from the [FileTransferRequest][Event::FileTransferRequest] event.
+     */
+    @Throws(P2pException::class)
+    @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
+    override suspend fun `declineFileRequest`(`request`: FileTransferRequest) {
+        return uniffiRustCallAsync(
+        callWithHandle { uniffiHandle ->
+            UniffiLib.uniffi_msnp11_sdk_fn_method_switchboardwrapper_decline_file_request(
+                uniffiHandle,
+                FfiConverterTypeFileTransferRequest.lower(`request`),
+            )
+        },
+        { future, callback, continuation -> UniffiLib.ffi_msnp11_sdk_rust_future_poll_void(future, callback, continuation) },
+        { future, continuation -> UniffiLib.ffi_msnp11_sdk_rust_future_complete_void(future, continuation) },
+        { future -> UniffiLib.ffi_msnp11_sdk_rust_future_free_void(future) },
+        // lift function
+        { Unit },
+
+        // Error FFI converter
+        P2pException.ErrorHandler,
+    )
+    }
+
+
     /**
      * Disconnects from the Switchboard.
      */
@@ -3292,7 +3387,7 @@ open class SwitchboardWrapper: Disposable, AutoCloseable, SwitchboardWrapperInte
         callWithHandle { uniffiHandle ->
             UniffiLib.uniffi_msnp11_sdk_fn_method_switchboardwrapper_disconnect(
                 uniffiHandle,
-                
+
             )
         },
         { future, callback, continuation -> UniffiLib.ffi_msnp11_sdk_rust_future_poll_void(future, callback, continuation) },
@@ -3300,13 +3395,13 @@ open class SwitchboardWrapper: Disposable, AutoCloseable, SwitchboardWrapperInte
         { future -> UniffiLib.ffi_msnp11_sdk_rust_future_free_void(future) },
         // lift function
         { Unit },
-        
+
         // Error FFI converter
         SdkException.ErrorHandler,
     )
     }
 
-    
+
     /**
      * Returns the session ID, if defined.
      */
@@ -3317,7 +3412,7 @@ open class SwitchboardWrapper: Disposable, AutoCloseable, SwitchboardWrapperInte
         callWithHandle { uniffiHandle ->
             UniffiLib.uniffi_msnp11_sdk_fn_method_switchboardwrapper_get_session_id(
                 uniffiHandle,
-                
+
             )
         },
         { future, callback, continuation -> UniffiLib.ffi_msnp11_sdk_rust_future_poll_rust_buffer(future, callback, continuation) },
@@ -3330,7 +3425,7 @@ open class SwitchboardWrapper: Disposable, AutoCloseable, SwitchboardWrapperInte
     )
     }
 
-    
+
     /**
      * Invites a new contact to this switchboard session. This makes it a temporary group chat.
      */
@@ -3349,13 +3444,13 @@ open class SwitchboardWrapper: Disposable, AutoCloseable, SwitchboardWrapperInte
         { future -> UniffiLib.ffi_msnp11_sdk_rust_future_free_void(future) },
         // lift function
         { Unit },
-        
+
         // Error FFI converter
         SdkException.ErrorHandler,
     )
     }
 
-    
+
     /**
      * Requests a contact's display picture and handles the transfer process. A [DisplayPicture][Event::DisplayPicture] event
      * is received once the transfer is complete.
@@ -3375,13 +3470,38 @@ open class SwitchboardWrapper: Disposable, AutoCloseable, SwitchboardWrapperInte
         { future -> UniffiLib.ffi_msnp11_sdk_rust_future_free_void(future) },
         // lift function
         { Unit },
-        
+
         // Error FFI converter
         P2pException.ErrorHandler,
     )
     }
 
-    
+
+    /**
+     * Sends a file to a participant. This returns once the transfer is complete.
+     */
+    @Throws(P2pException::class)
+    @Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE")
+    override suspend fun `sendFile`(`email`: kotlin.String, `fileName`: kotlin.String, `file`: kotlin.ByteArray) {
+        return uniffiRustCallAsync(
+        callWithHandle { uniffiHandle ->
+            UniffiLib.uniffi_msnp11_sdk_fn_method_switchboardwrapper_send_file(
+                uniffiHandle,
+                FfiConverterString.lower(`email`),FfiConverterString.lower(`fileName`),FfiConverterByteArray.lower(`file`),
+            )
+        },
+        { future, callback, continuation -> UniffiLib.ffi_msnp11_sdk_rust_future_poll_void(future, callback, continuation) },
+        { future, continuation -> UniffiLib.ffi_msnp11_sdk_rust_future_complete_void(future, continuation) },
+        { future -> UniffiLib.ffi_msnp11_sdk_rust_future_free_void(future) },
+        // lift function
+        { Unit },
+
+        // Error FFI converter
+        P2pException.ErrorHandler,
+    )
+    }
+
+
     /**
      * Sends a nudge to the session.
      */
@@ -3392,7 +3512,7 @@ open class SwitchboardWrapper: Disposable, AutoCloseable, SwitchboardWrapperInte
         callWithHandle { uniffiHandle ->
             UniffiLib.uniffi_msnp11_sdk_fn_method_switchboardwrapper_send_nudge(
                 uniffiHandle,
-                
+
             )
         },
         { future, callback, continuation -> UniffiLib.ffi_msnp11_sdk_rust_future_poll_void(future, callback, continuation) },
@@ -3400,13 +3520,13 @@ open class SwitchboardWrapper: Disposable, AutoCloseable, SwitchboardWrapperInte
         { future -> UniffiLib.ffi_msnp11_sdk_rust_future_free_void(future) },
         // lift function
         { Unit },
-        
+
         // Error FFI converter
         MessagingException.ErrorHandler,
     )
     }
 
-    
+
     /**
      * Sends a plain text message to the session.
      */
@@ -3425,13 +3545,13 @@ open class SwitchboardWrapper: Disposable, AutoCloseable, SwitchboardWrapperInte
         { future -> UniffiLib.ffi_msnp11_sdk_rust_future_free_void(future) },
         // lift function
         { Unit },
-        
+
         // Error FFI converter
         MessagingException.ErrorHandler,
     )
     }
 
-    
+
     /**
      * Sends an "is writing..." notification to the session.
      */
@@ -3450,24 +3570,24 @@ open class SwitchboardWrapper: Disposable, AutoCloseable, SwitchboardWrapperInte
         { future -> UniffiLib.ffi_msnp11_sdk_rust_future_free_void(future) },
         // lift function
         { Unit },
-        
+
         // Error FFI converter
         MessagingException.ErrorHandler,
     )
     }
 
-    
-
-    
 
 
-    
-    
+
+
+
+
+
     /**
      * @suppress
      */
     companion object
-    
+
 }
 
 
@@ -3498,15 +3618,15 @@ public object FfiConverterTypeSwitchboardWrapper: FfiConverter<SwitchboardWrappe
 
 data class Config (
     var `tabs`: List<Tab>
-    , 
+    ,
     var `msnTodayUrl`: kotlin.String
-    
+
 ){
-    
 
-    
 
-    
+
+
+
     companion object
 }
 
@@ -3535,31 +3655,87 @@ public object FfiConverterTypeConfig: FfiConverterRustBuffer<Config> {
 
 
 /**
+ * Used to accept or decline a file transfer request.
+ */
+data class FileTransferRequest (
+    var `to`: kotlin.String
+    ,
+    var `from`: kotlin.String
+    ,
+    var `branch`: kotlin.String
+    ,
+    var `callId`: kotlin.String
+    ,
+    var `sessionId`: kotlin.UInt
+
+){
+
+
+
+
+
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFileTransferRequest: FfiConverterRustBuffer<FileTransferRequest> {
+    override fun read(buf: ByteBuffer): FileTransferRequest {
+        return FileTransferRequest(
+            FfiConverterString.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterUInt.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: FileTransferRequest) = (
+            FfiConverterString.allocationSize(value.`to`) +
+            FfiConverterString.allocationSize(value.`from`) +
+            FfiConverterString.allocationSize(value.`branch`) +
+            FfiConverterString.allocationSize(value.`callId`) +
+            FfiConverterUInt.allocationSize(value.`sessionId`)
+    )
+
+    override fun write(value: FileTransferRequest, buf: ByteBuffer) {
+            FfiConverterString.write(value.`to`, buf)
+            FfiConverterString.write(value.`from`, buf)
+            FfiConverterString.write(value.`branch`, buf)
+            FfiConverterString.write(value.`callId`, buf)
+            FfiConverterUInt.write(value.`sessionId`, buf)
+    }
+}
+
+
+
+/**
  * MSN object representing data like display pictures.
  */
 data class MsnObject (
     var `creator`: kotlin.String
-    , 
-    var `size`: kotlin.UInt
-    , 
+    ,
+    var `size`: kotlin.ULong
+    ,
     var `objectType`: kotlin.UShort
-    , 
+    ,
     var `location`: kotlin.String
-    , 
+    ,
     var `friendly`: kotlin.String
-    , 
+    ,
     var `sha1d`: kotlin.String
-    , 
+    ,
     var `sha1c`: kotlin.String?
-    , 
+    ,
     var `contentType`: kotlin.String?
-    
+
 ){
-    
 
-    
 
-    
+
+
+
     companion object
 }
 
@@ -3570,7 +3746,7 @@ public object FfiConverterTypeMsnObject: FfiConverterRustBuffer<MsnObject> {
     override fun read(buf: ByteBuffer): MsnObject {
         return MsnObject(
             FfiConverterString.read(buf),
-            FfiConverterUInt.read(buf),
+            FfiConverterULong.read(buf),
             FfiConverterUShort.read(buf),
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
@@ -3582,7 +3758,7 @@ public object FfiConverterTypeMsnObject: FfiConverterRustBuffer<MsnObject> {
 
     override fun allocationSize(value: MsnObject) = (
             FfiConverterString.allocationSize(value.`creator`) +
-            FfiConverterUInt.allocationSize(value.`size`) +
+            FfiConverterULong.allocationSize(value.`size`) +
             FfiConverterUShort.allocationSize(value.`objectType`) +
             FfiConverterString.allocationSize(value.`location`) +
             FfiConverterString.allocationSize(value.`friendly`) +
@@ -3593,7 +3769,7 @@ public object FfiConverterTypeMsnObject: FfiConverterRustBuffer<MsnObject> {
 
     override fun write(value: MsnObject, buf: ByteBuffer) {
             FfiConverterString.write(value.`creator`, buf)
-            FfiConverterUInt.write(value.`size`, buf)
+            FfiConverterULong.write(value.`size`, buf)
             FfiConverterUShort.write(value.`objectType`, buf)
             FfiConverterString.write(value.`location`, buf)
             FfiConverterString.write(value.`friendly`, buf)
@@ -3611,15 +3787,15 @@ public object FfiConverterTypeMsnObject: FfiConverterRustBuffer<MsnObject> {
  */
 data class PersonalMessage (
     var `psm`: kotlin.String
-    , 
+    ,
     var `currentMedia`: kotlin.String
-    
+
 ){
-    
 
-    
 
-    
+
+
+
     companion object
 }
 
@@ -3652,23 +3828,23 @@ public object FfiConverterTypePersonalMessage: FfiConverterRustBuffer<PersonalMe
  */
 data class PlainText (
     var `bold`: kotlin.Boolean
-    , 
+    ,
     var `italic`: kotlin.Boolean
-    , 
+    ,
     var `underline`: kotlin.Boolean
-    , 
+    ,
     var `strikethrough`: kotlin.Boolean
-    , 
+    ,
     var `color`: kotlin.String
-    , 
+    ,
     var `text`: kotlin.String
-    
+
 ){
-    
 
-    
 
-    
+
+
+
     companion object
 }
 
@@ -3713,19 +3889,19 @@ public object FfiConverterTypePlainText: FfiConverterRustBuffer<PlainText> {
  */
 data class Presence (
     var `status`: MsnpStatus
-    , 
+    ,
     var `clientId`: kotlin.ULong
-    , 
+    ,
     var `msnObject`: MsnObject?
-    , 
+    ,
     var `msnObjectString`: kotlin.String?
-    
+
 ){
-    
 
-    
 
-    
+
+
+
     companion object
 }
 
@@ -3761,27 +3937,27 @@ public object FfiConverterTypePresence: FfiConverterRustBuffer<Presence> {
 
 data class Tab (
     var `tabType`: kotlin.String
-    , 
+    ,
     var `contentUrl`: kotlin.String
-    , 
+    ,
     var `hitUrl`: kotlin.String
-    , 
+    ,
     var `image`: kotlin.String
-    , 
+    ,
     var `name`: kotlin.String
-    , 
+    ,
     var `tooltip`: kotlin.String
-    , 
+    ,
     var `siteId`: kotlin.String
-    , 
+    ,
     var `notificationId`: kotlin.String
-    
+
 ){
-    
 
-    
 
-    
+
+
+
     companion object
 }
 
@@ -3833,52 +4009,52 @@ public object FfiConverterTypeTab: FfiConverterRustBuffer<Tab> {
  * Errors when performing contact actions.
  */
 sealed class ContactException: kotlin.Exception() {
-    
+
     class ServerException(
         ) : ContactException() {
         override val message
             get() = ""
     }
-    
+
     class InvalidArgument(
         ) : ContactException() {
         override val message
             get() = ""
     }
-    
+
     class InvalidContact(
         ) : ContactException() {
         override val message
             get() = ""
     }
-    
+
     class ReceivingException(
         ) : ContactException() {
         override val message
             get() = ""
     }
-    
+
     class TransmittingException(
         ) : ContactException() {
         override val message
             get() = ""
     }
-    
+
     class ContactIsOffline(
         ) : ContactException() {
         override val message
             get() = ""
     }
-    
 
-    
+
+
 
 
     companion object ErrorHandler : UniffiRustCallStatusErrorHandler<ContactException> {
         override fun lift(error_buf: RustBuffer.ByValue): ContactException = FfiConverterTypeContactError.lift(error_buf)
     }
 
-    
+
 }
 
 /**
@@ -3886,7 +4062,7 @@ sealed class ContactException: kotlin.Exception() {
  */
 public object FfiConverterTypeContactError : FfiConverterRustBuffer<ContactException> {
     override fun read(buf: ByteBuffer): ContactException {
-        
+
 
         return when(buf.getInt()) {
             1 -> ContactException.ServerException()
@@ -3965,348 +4141,363 @@ public object FfiConverterTypeContactError : FfiConverterRustBuffer<ContactExcep
  * Contact and messaging events.
  */
 sealed class Event: Disposable  {
-    
+
     /**
      * The Dispatch Server replied with a command asking to connect to a Notification Server.
      */
     data class RedirectedTo(
-        val `server`: kotlin.String, 
+        val `server`: kotlin.String,
         val `port`: kotlin.UShort) : Event()
-        
+
     {
-        
+
 
         companion object
     }
-    
+
     /**
      * Authenticated successfully.
      */
     object Authenticated : Event()
-    
-    
+
+
     /**
      * GTC value stored in the server.
      */
     data class Gtc(
         val v1: kotlin.String) : Event()
-        
+
     {
-        
+
 
         companion object
     }
-    
+
     /**
      * BLP value stored in the server.
      */
     data class Blp(
         val v1: kotlin.String) : Event()
-        
+
     {
-        
+
 
         companion object
     }
-    
+
     /**
      * User display name stored in the server.
      */
     data class DisplayName(
         val v1: kotlin.String) : Event()
-        
+
     {
-        
+
 
         companion object
     }
-    
+
     /**
      * A contact group
      */
     data class Group(
-        val `name`: kotlin.String, 
+        val `name`: kotlin.String,
         val `guid`: kotlin.String) : Event()
-        
+
     {
-        
+
 
         companion object
     }
-    
+
     /**
      * A contact not in the forward list.
      */
     data class Contact(
-        val `email`: kotlin.String, 
-        val `displayName`: kotlin.String, 
+        val `email`: kotlin.String,
+        val `displayName`: kotlin.String,
         val `lists`: List<uniffi.msnp11_sdk.MsnpList>) : Event()
-        
+
     {
-        
+
 
         companion object
     }
-    
+
     /**
      * A contact in the forward list.
      */
     data class ContactInForwardList(
-        val `email`: kotlin.String, 
-        val `displayName`: kotlin.String, 
-        val `guid`: kotlin.String, 
-        val `lists`: List<uniffi.msnp11_sdk.MsnpList>, 
+        val `email`: kotlin.String,
+        val `displayName`: kotlin.String,
+        val `guid`: kotlin.String,
+        val `lists`: List<uniffi.msnp11_sdk.MsnpList>,
         val `groups`: List<kotlin.String>) : Event()
-        
+
     {
-        
+
 
         companion object
     }
-    
+
     /**
      * Contact presence update sent when setting a user's presence for the first time.
      */
     data class InitialPresenceUpdate(
-        val `email`: kotlin.String, 
-        val `displayName`: kotlin.String, 
+        val `email`: kotlin.String,
+        val `displayName`: kotlin.String,
         val `presence`: uniffi.msnp11_sdk.Presence) : Event()
-        
+
     {
-        
+
 
         companion object
     }
-    
+
     /**
      * Contact presence information update.
      */
     data class PresenceUpdate(
-        val `email`: kotlin.String, 
-        val `displayName`: kotlin.String, 
+        val `email`: kotlin.String,
+        val `displayName`: kotlin.String,
         val `presence`: uniffi.msnp11_sdk.Presence) : Event()
-        
+
     {
-        
+
 
         companion object
     }
-    
+
     /**
      * Contact personal message update.
      */
     data class PersonalMessageUpdate(
-        val `email`: kotlin.String, 
+        val `email`: kotlin.String,
         val `personalMessage`: uniffi.msnp11_sdk.PersonalMessage) : Event()
-        
+
     {
-        
+
 
         companion object
     }
-    
+
     /**
      * A contact has gone offline.
      */
     data class ContactOffline(
         val `email`: kotlin.String) : Event()
-        
+
     {
-        
+
 
         companion object
     }
-    
+
     /**
      * Added to someone's forward list.
      */
     data class AddedBy(
-        val `email`: kotlin.String, 
+        val `email`: kotlin.String,
         val `displayName`: kotlin.String) : Event()
-        
+
     {
-        
+
 
         companion object
     }
-    
+
     /**
      * Removed from someone's forward list.
      */
     data class RemovedBy(
         val v1: kotlin.String) : Event()
-        
+
     {
-        
+
 
         companion object
     }
-    
+
     /**
      * An invitation to a Switchboard session was accepted.
      */
     data class SessionAnswered(
         val v1: uniffi.msnp11_sdk.Switchboard) : Event()
-        
+
     {
-        
+
 
         companion object
     }
-    
+
     /**
      * New text message.
      */
     data class TextMessage(
-        val `email`: kotlin.String, 
+        val `email`: kotlin.String,
         val `message`: uniffi.msnp11_sdk.PlainText) : Event()
-        
+
     {
-        
+
 
         companion object
     }
-    
+
     /**
      * New nudge.
      */
     data class Nudge(
         val `email`: kotlin.String) : Event()
-        
+
     {
-        
+
 
         companion object
     }
-    
+
     /**
      * Contact is writing...
      */
     data class TypingNotification(
         val `email`: kotlin.String) : Event()
-        
+
     {
-        
+
 
         companion object
     }
-    
+
     /**
      * New user joined the Switchboard.
      */
     data class ParticipantInSwitchboard(
         val `email`: kotlin.String) : Event()
-        
+
     {
-        
+
 
         companion object
     }
-    
+
     /**
      * A user left the Switchboard.
      */
     data class ParticipantLeftSwitchboard(
         val `email`: kotlin.String) : Event()
-        
+
     {
-        
+
 
         companion object
     }
-    
+
     /**
      * A contact's display picture was transferred.
      */
     data class DisplayPicture(
-        val `email`: kotlin.String, 
+        val `email`: kotlin.String,
         val `data`: kotlin.ByteArray) : Event()
-        
+
     {
-        
+
 
         companion object
     }
-    
+
+    /**
+     * A contact requested to transfer a file.
+     */
+    data class FileTransferRequest(
+        val `email`: kotlin.String,
+        val `fileName`: kotlin.String,
+        val `fileSize`: kotlin.ULong,
+        val `request`: uniffi.msnp11_sdk.FileTransferRequest) : Event()
+
+    {
+
+
+        companion object
+    }
+
     /**
      * The server has warned it will shut down for maintenance.
      */
     data class ServerMaintenanceScheduled(
         val `timeRemaining`: kotlin.UInt) : Event()
-        
+
     {
-        
+
 
         companion object
     }
-    
+
     /**
      * Disconnected because the user logged in on another device.
      */
     object LoggedInAnotherDevice : Event()
-    
-    
+
+
     /**
      * Lost connection to the server.
      */
     object Disconnected : Event()
-    
-    
 
-    
+
+
+
     @Suppress("UNNECESSARY_SAFE_CALL") // codegen is much simpler if we unconditionally emit safe calls here
     override fun destroy() {
         when(this) {
             is Event.RedirectedTo -> {
-                
+
     Disposable.destroy(
         this.`server`,
         this.`port`
     )
-                
+
             }
             is Event.Authenticated -> {// Nothing to destroy
             }
             is Event.Gtc -> {
-                
+
     Disposable.destroy(
         this.v1
     )
-                
+
             }
             is Event.Blp -> {
-                
+
     Disposable.destroy(
         this.v1
     )
-                
+
             }
             is Event.DisplayName -> {
-                
+
     Disposable.destroy(
         this.v1
     )
-                
+
             }
             is Event.Group -> {
-                
+
     Disposable.destroy(
         this.`name`,
         this.`guid`
     )
-                
+
             }
             is Event.Contact -> {
-                
+
     Disposable.destroy(
         this.`email`,
         this.`displayName`,
         this.`lists`
     )
-                
+
             }
             is Event.ContactInForwardList -> {
-                
+
     Disposable.destroy(
         this.`email`,
         this.`displayName`,
@@ -4314,113 +4505,123 @@ sealed class Event: Disposable  {
         this.`lists`,
         this.`groups`
     )
-                
+
             }
             is Event.InitialPresenceUpdate -> {
-                
+
     Disposable.destroy(
         this.`email`,
         this.`displayName`,
         this.`presence`
     )
-                
+
             }
             is Event.PresenceUpdate -> {
-                
+
     Disposable.destroy(
         this.`email`,
         this.`displayName`,
         this.`presence`
     )
-                
+
             }
             is Event.PersonalMessageUpdate -> {
-                
+
     Disposable.destroy(
         this.`email`,
         this.`personalMessage`
     )
-                
+
             }
             is Event.ContactOffline -> {
-                
+
     Disposable.destroy(
         this.`email`
     )
-                
+
             }
             is Event.AddedBy -> {
-                
+
     Disposable.destroy(
         this.`email`,
         this.`displayName`
     )
-                
+
             }
             is Event.RemovedBy -> {
-                
+
     Disposable.destroy(
         this.v1
     )
-                
+
             }
             is Event.SessionAnswered -> {
-                
+
     Disposable.destroy(
         this.v1
     )
-                
+
             }
             is Event.TextMessage -> {
-                
+
     Disposable.destroy(
         this.`email`,
         this.`message`
     )
-                
+
             }
             is Event.Nudge -> {
-                
+
     Disposable.destroy(
         this.`email`
     )
-                
+
             }
             is Event.TypingNotification -> {
-                
+
     Disposable.destroy(
         this.`email`
     )
-                
+
             }
             is Event.ParticipantInSwitchboard -> {
-                
+
     Disposable.destroy(
         this.`email`
     )
-                
+
             }
             is Event.ParticipantLeftSwitchboard -> {
-                
+
     Disposable.destroy(
         this.`email`
     )
-                
+
             }
             is Event.DisplayPicture -> {
-                
+
     Disposable.destroy(
         this.`email`,
         this.`data`
     )
-                
+
+            }
+            is Event.FileTransferRequest -> {
+
+    Disposable.destroy(
+        this.`email`,
+        this.`fileName`,
+        this.`fileSize`,
+        this.`request`
+    )
+
             }
             is Event.ServerMaintenanceScheduled -> {
-                
+
     Disposable.destroy(
         this.`timeRemaining`
     )
-                
+
             }
             is Event.LoggedInAnotherDevice -> {// Nothing to destroy
             }
@@ -4428,10 +4629,10 @@ sealed class Event: Disposable  {
             }
         }.let { /* this makes the `when` an expression, which ensures it is exhaustive */ }
     }
-    
 
-    
-    
+
+
+
 
 
     companion object
@@ -4520,11 +4721,17 @@ public object FfiConverterTypeEvent : FfiConverterRustBuffer<Event>{
                 FfiConverterString.read(buf),
                 FfiConverterByteArray.read(buf),
                 )
-            22 -> Event.ServerMaintenanceScheduled(
+            22 -> Event.FileTransferRequest(
+                FfiConverterString.read(buf),
+                FfiConverterString.read(buf),
+                FfiConverterULong.read(buf),
+                FfiConverterTypeFileTransferRequest.read(buf),
+                )
+            23 -> Event.ServerMaintenanceScheduled(
                 FfiConverterUInt.read(buf),
                 )
-            23 -> Event.LoggedInAnotherDevice
-            24 -> Event.Disconnected
+            24 -> Event.LoggedInAnotherDevice
+            25 -> Event.Disconnected
             else -> throw RuntimeException("invalid enum value, something is very wrong!!")
         }
     }
@@ -4692,6 +4899,16 @@ public object FfiConverterTypeEvent : FfiConverterRustBuffer<Event>{
                 + FfiConverterByteArray.allocationSize(value.`data`)
             )
         }
+        is Event.FileTransferRequest -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterString.allocationSize(value.`email`)
+                + FfiConverterString.allocationSize(value.`fileName`)
+                + FfiConverterULong.allocationSize(value.`fileSize`)
+                + FfiConverterTypeFileTransferRequest.allocationSize(value.`request`)
+            )
+        }
         is Event.ServerMaintenanceScheduled -> {
             // Add the size for the Int that specifies the variant plus the size needed for all fields
             (
@@ -4835,17 +5052,25 @@ public object FfiConverterTypeEvent : FfiConverterRustBuffer<Event>{
                 FfiConverterByteArray.write(value.`data`, buf)
                 Unit
             }
-            is Event.ServerMaintenanceScheduled -> {
+            is Event.FileTransferRequest -> {
                 buf.putInt(22)
+                FfiConverterString.write(value.`email`, buf)
+                FfiConverterString.write(value.`fileName`, buf)
+                FfiConverterULong.write(value.`fileSize`, buf)
+                FfiConverterTypeFileTransferRequest.write(value.`request`, buf)
+                Unit
+            }
+            is Event.ServerMaintenanceScheduled -> {
+                buf.putInt(23)
                 FfiConverterUInt.write(value.`timeRemaining`, buf)
                 Unit
             }
             is Event.LoggedInAnotherDevice -> {
-                buf.putInt(23)
+                buf.putInt(24)
                 Unit
             }
             is Event.Disconnected -> {
-                buf.putInt(24)
+                buf.putInt(25)
                 Unit
             }
         }.let { /* this makes the `when` an expression, which ensures it is exhaustive */ }
@@ -4862,40 +5087,40 @@ public object FfiConverterTypeEvent : FfiConverterRustBuffer<Event>{
  * Errors when sending messages.
  */
 sealed class MessagingException: kotlin.Exception() {
-    
+
     class ReceivingException(
         ) : MessagingException() {
         override val message
             get() = ""
     }
-    
+
     class TransmittingException(
         ) : MessagingException() {
         override val message
             get() = ""
     }
-    
+
     class CouldNotGetSessionId(
         ) : MessagingException() {
         override val message
             get() = ""
     }
-    
+
     class MessageNotDelivered(
         ) : MessagingException() {
         override val message
             get() = ""
     }
-    
 
-    
+
+
 
 
     companion object ErrorHandler : UniffiRustCallStatusErrorHandler<MessagingException> {
         override fun lift(error_buf: RustBuffer.ByValue): MessagingException = FfiConverterTypeMessagingError.lift(error_buf)
     }
 
-    
+
 }
 
 /**
@@ -4903,7 +5128,7 @@ sealed class MessagingException: kotlin.Exception() {
  */
 public object FfiConverterTypeMessagingError : FfiConverterRustBuffer<MessagingException> {
     override fun read(buf: ByteBuffer): MessagingException {
-        
+
 
         return when(buf.getInt()) {
             1 -> MessagingException.ReceivingException()
@@ -4965,7 +5190,7 @@ public object FfiConverterTypeMessagingError : FfiConverterRustBuffer<MessagingE
  */
 
 enum class MsnpList {
-    
+
     /**
      * Your contact list as it appears in the client.
      */
@@ -4981,7 +5206,7 @@ enum class MsnpList {
     REVERSE_LIST,
     PENDING_LIST;
 
-    
+
 
 
     companion object
@@ -5014,7 +5239,7 @@ public object FfiConverterTypeMsnpList: FfiConverterRustBuffer<MsnpList> {
  */
 
 enum class MsnpStatus {
-    
+
     ONLINE,
     BUSY,
     AWAY,
@@ -5024,7 +5249,7 @@ enum class MsnpStatus {
     BE_RIGHT_BACK,
     APPEAR_OFFLINE;
 
-    
+
 
 
     companion object
@@ -5058,88 +5283,118 @@ public object FfiConverterTypeMsnpStatus: FfiConverterRustBuffer<MsnpStatus> {
  * Errors when using P2P features like display picture transfers.
  */
 sealed class P2pException: kotlin.Exception() {
-    
+
     class P2pInvite(
         ) : P2pException() {
         override val message
             get() = ""
     }
-    
+
     class OtherDestination(
         ) : P2pException() {
         override val message
             get() = ""
     }
-    
+
     class CouldNotGetSessionData(
         ) : P2pException() {
         override val message
             get() = ""
     }
-    
+
     class OtherContext(
         ) : P2pException() {
         override val message
             get() = ""
     }
-    
+
     class BinaryHeaderReadingException(
         ) : P2pException() {
         override val message
             get() = ""
     }
-    
+
+    class BinaryHeaderWritingException(
+        ) : P2pException() {
+        override val message
+            get() = ""
+    }
+
     class MessageNotDelivered(
         ) : P2pException() {
         override val message
             get() = ""
     }
-    
+
     class NotLoggedIn(
         ) : P2pException() {
         override val message
             get() = ""
     }
-    
+
     class TransmittingException(
         ) : P2pException() {
         override val message
             get() = ""
     }
-    
+
     class ReceivingException(
         ) : P2pException() {
         override val message
             get() = ""
     }
-    
+
     class InviteException(
         ) : P2pException() {
         override val message
             get() = ""
     }
-    
+
     class CouldNotGetUserData(
         ) : P2pException() {
         override val message
             get() = ""
     }
-    
+
     class CouldNotGetDisplayPicture(
         ) : P2pException() {
         override val message
             get() = ""
     }
-    
 
-    
+    class CouldNotSendThroughDirectConnection(
+        ) : P2pException() {
+        override val message
+            get() = ""
+    }
+
+    class CouldNotSendFile(
+        ) : P2pException() {
+        override val message
+            get() = ""
+    }
+
+    class FileTransferCancelled(
+        ) : P2pException() {
+        override val message
+            get() = ""
+    }
+
+    class FileTransferDeclined(
+        ) : P2pException() {
+        override val message
+            get() = ""
+    }
+
+
+
 
 
     companion object ErrorHandler : UniffiRustCallStatusErrorHandler<P2pException> {
         override fun lift(error_buf: RustBuffer.ByValue): P2pException = FfiConverterTypeP2pError.lift(error_buf)
     }
 
-    
+
 }
 
 /**
@@ -5147,7 +5402,7 @@ sealed class P2pException: kotlin.Exception() {
  */
 public object FfiConverterTypeP2pError : FfiConverterRustBuffer<P2pException> {
     override fun read(buf: ByteBuffer): P2pException {
-        
+
 
         return when(buf.getInt()) {
             1 -> P2pException.P2pInvite()
@@ -5155,13 +5410,18 @@ public object FfiConverterTypeP2pError : FfiConverterRustBuffer<P2pException> {
             3 -> P2pException.CouldNotGetSessionData()
             4 -> P2pException.OtherContext()
             5 -> P2pException.BinaryHeaderReadingException()
-            6 -> P2pException.MessageNotDelivered()
-            7 -> P2pException.NotLoggedIn()
-            8 -> P2pException.TransmittingException()
-            9 -> P2pException.ReceivingException()
-            10 -> P2pException.InviteException()
-            11 -> P2pException.CouldNotGetUserData()
-            12 -> P2pException.CouldNotGetDisplayPicture()
+            6 -> P2pException.BinaryHeaderWritingException()
+            7 -> P2pException.MessageNotDelivered()
+            8 -> P2pException.NotLoggedIn()
+            9 -> P2pException.TransmittingException()
+            10 -> P2pException.ReceivingException()
+            11 -> P2pException.InviteException()
+            12 -> P2pException.CouldNotGetUserData()
+            13 -> P2pException.CouldNotGetDisplayPicture()
+            14 -> P2pException.CouldNotSendThroughDirectConnection()
+            15 -> P2pException.CouldNotSendFile()
+            16 -> P2pException.FileTransferCancelled()
+            17 -> P2pException.FileTransferDeclined()
             else -> throw RuntimeException("invalid error enum value, something is very wrong!!")
         }
     }
@@ -5185,6 +5445,10 @@ public object FfiConverterTypeP2pError : FfiConverterRustBuffer<P2pException> {
                 4UL
             )
             is P2pException.BinaryHeaderReadingException -> (
+                // Add the size for the Int that specifies the variant plus the size needed for all fields
+                4UL
+            )
+            is P2pException.BinaryHeaderWritingException -> (
                 // Add the size for the Int that specifies the variant plus the size needed for all fields
                 4UL
             )
@@ -5216,6 +5480,22 @@ public object FfiConverterTypeP2pError : FfiConverterRustBuffer<P2pException> {
                 // Add the size for the Int that specifies the variant plus the size needed for all fields
                 4UL
             )
+            is P2pException.CouldNotSendThroughDirectConnection -> (
+                // Add the size for the Int that specifies the variant plus the size needed for all fields
+                4UL
+            )
+            is P2pException.CouldNotSendFile -> (
+                // Add the size for the Int that specifies the variant plus the size needed for all fields
+                4UL
+            )
+            is P2pException.FileTransferCancelled -> (
+                // Add the size for the Int that specifies the variant plus the size needed for all fields
+                4UL
+            )
+            is P2pException.FileTransferDeclined -> (
+                // Add the size for the Int that specifies the variant plus the size needed for all fields
+                4UL
+            )
         }
     }
 
@@ -5241,32 +5521,52 @@ public object FfiConverterTypeP2pError : FfiConverterRustBuffer<P2pException> {
                 buf.putInt(5)
                 Unit
             }
-            is P2pException.MessageNotDelivered -> {
+            is P2pException.BinaryHeaderWritingException -> {
                 buf.putInt(6)
                 Unit
             }
-            is P2pException.NotLoggedIn -> {
+            is P2pException.MessageNotDelivered -> {
                 buf.putInt(7)
                 Unit
             }
-            is P2pException.TransmittingException -> {
+            is P2pException.NotLoggedIn -> {
                 buf.putInt(8)
                 Unit
             }
-            is P2pException.ReceivingException -> {
+            is P2pException.TransmittingException -> {
                 buf.putInt(9)
                 Unit
             }
-            is P2pException.InviteException -> {
+            is P2pException.ReceivingException -> {
                 buf.putInt(10)
                 Unit
             }
-            is P2pException.CouldNotGetUserData -> {
+            is P2pException.InviteException -> {
                 buf.putInt(11)
                 Unit
             }
-            is P2pException.CouldNotGetDisplayPicture -> {
+            is P2pException.CouldNotGetUserData -> {
                 buf.putInt(12)
+                Unit
+            }
+            is P2pException.CouldNotGetDisplayPicture -> {
+                buf.putInt(13)
+                Unit
+            }
+            is P2pException.CouldNotSendThroughDirectConnection -> {
+                buf.putInt(14)
+                Unit
+            }
+            is P2pException.CouldNotSendFile -> {
+                buf.putInt(15)
+                Unit
+            }
+            is P2pException.FileTransferCancelled -> {
+                buf.putInt(16)
+                Unit
+            }
+            is P2pException.FileTransferDeclined -> {
+                buf.putInt(17)
                 Unit
             }
         }.let { /* this makes the `when` an expression, which ensures it is exhaustive */ }
@@ -5282,118 +5582,124 @@ public object FfiConverterTypeP2pError : FfiConverterRustBuffer<P2pException> {
  * General errors the SDK might return.
  */
 sealed class SdkException: kotlin.Exception() {
-    
+
     class ResolutionException(
         ) : SdkException() {
         override val message
             get() = ""
     }
-    
+
     class ProtocolNotSupported(
         ) : SdkException() {
         override val message
             get() = ""
     }
-    
+
     class ServerIsBusy(
         ) : SdkException() {
         override val message
             get() = ""
     }
-    
+
     class ServerException(
         ) : SdkException() {
         override val message
             get() = ""
     }
-    
+
     class AuthenticationHeaderNotFound(
         ) : SdkException() {
         override val message
             get() = ""
     }
-    
+
     class CouldNotGetAuthenticationString(
         ) : SdkException() {
         override val message
             get() = ""
     }
-    
+
     class InvalidArgument(
         ) : SdkException() {
         override val message
             get() = ""
     }
-    
+
     class Disconnected(
         ) : SdkException() {
         override val message
             get() = ""
     }
-    
+
     class ReceivingException(
         ) : SdkException() {
         override val message
             get() = ""
     }
-    
+
     class TransmittingException(
         ) : SdkException() {
         override val message
             get() = ""
     }
-    
+
     class CouldNotConnectToServer(
         ) : SdkException() {
         override val message
             get() = ""
     }
-    
+
     class CouldNotCreateRuntime(
         ) : SdkException() {
         override val message
             get() = ""
     }
-    
+
     class CouldNotSetUserData(
         ) : SdkException() {
         override val message
             get() = ""
     }
-    
+
     class NotLoggedIn(
         ) : SdkException() {
         override val message
             get() = ""
     }
-    
+
     class InvalidContact(
         ) : SdkException() {
         override val message
             get() = ""
     }
-    
+
     class ContactIsOffline(
         ) : SdkException() {
         override val message
             get() = ""
     }
-    
+
+    class CouldNotCreateMsnObject(
+        ) : SdkException() {
+        override val message
+            get() = ""
+    }
+
     class ConfigRequestException(
         ) : SdkException() {
         override val message
             get() = ""
     }
-    
 
-    
+
+
 
 
     companion object ErrorHandler : UniffiRustCallStatusErrorHandler<SdkException> {
         override fun lift(error_buf: RustBuffer.ByValue): SdkException = FfiConverterTypeSdkError.lift(error_buf)
     }
 
-    
+
 }
 
 /**
@@ -5401,7 +5707,7 @@ sealed class SdkException: kotlin.Exception() {
  */
 public object FfiConverterTypeSdkError : FfiConverterRustBuffer<SdkException> {
     override fun read(buf: ByteBuffer): SdkException {
-        
+
 
         return when(buf.getInt()) {
             1 -> SdkException.ResolutionException()
@@ -5420,7 +5726,8 @@ public object FfiConverterTypeSdkError : FfiConverterRustBuffer<SdkException> {
             14 -> SdkException.NotLoggedIn()
             15 -> SdkException.InvalidContact()
             16 -> SdkException.ContactIsOffline()
-            17 -> SdkException.ConfigRequestException()
+            17 -> SdkException.CouldNotCreateMsnObject()
+            18 -> SdkException.ConfigRequestException()
             else -> throw RuntimeException("invalid error enum value, something is very wrong!!")
         }
     }
@@ -5488,6 +5795,10 @@ public object FfiConverterTypeSdkError : FfiConverterRustBuffer<SdkException> {
                 4UL
             )
             is SdkException.ContactIsOffline -> (
+                // Add the size for the Int that specifies the variant plus the size needed for all fields
+                4UL
+            )
+            is SdkException.CouldNotCreateMsnObject -> (
                 // Add the size for the Int that specifies the variant plus the size needed for all fields
                 4UL
             )
@@ -5564,8 +5875,12 @@ public object FfiConverterTypeSdkError : FfiConverterRustBuffer<SdkException> {
                 buf.putInt(16)
                 Unit
             }
-            is SdkException.ConfigRequestException -> {
+            is SdkException.CouldNotCreateMsnObject -> {
                 buf.putInt(17)
+                Unit
+            }
+            is SdkException.ConfigRequestException -> {
+                buf.putInt(18)
                 Unit
             }
         }.let { /* this makes the `when` an expression, which ensures it is exhaustive */ }

@@ -59,7 +59,7 @@
     <string name="service_status_link" translatable="false">Service Status</string>
     <string name="get_new_account_link" translatable="false">Get a new account</string>
     <string name="microsoft_passport_network" translatable="false">Microsoft Passport Network</string>
-    <string name="hotmail_account_hint">Hotmail Account</string>
+    <string name="hotmail_account_hint">MSN or Escargot account address</string>
     <string name="password_hint">Password</string>
     <string name="remember_me">Remember me</string>
     <string name="sign_in">Sign In</string>
@@ -124,6 +124,19 @@
     <string name="resend">Resend</string>
     <string name="chat_me_prefix">Me: %1$s</string>
     <string name="group_participants_updated">Participants list updated</string>
+    <string name="attach_file" tools:ignore="MissingTranslation">Attach file</string>
+    <string name="sending_file" tools:ignore="MissingTranslation">Sending file…</string>
+    <string name="file_sent" tools:ignore="MissingTranslation">File sent</string>
+    <string name="file_send_failed" tools:ignore="MissingTranslation">Could not send file: %1$s</string>
+    <string name="incoming_file_title" tools:ignore="MissingTranslation">Incoming file</string>
+    <string name="incoming_file_message" tools:ignore="MissingTranslation">%1$s wants to send you %2$s (%3$s).</string>
+    <string name="accept_file" tools:ignore="MissingTranslation">Accept</string>
+    <string name="decline_file" tools:ignore="MissingTranslation">Decline</string>
+    <string name="file_received" tools:ignore="MissingTranslation">File saved</string>
+    <string name="file_receive_failed" tools:ignore="MissingTranslation">Could not receive file: %1$s</string>
+    <string name="file_transfer_too_large" tools:ignore="MissingTranslation">This app can send or receive files up to 25 MiB.</string>
+    <string name="file_transfer_save_prompt" tools:ignore="MissingTranslation">Choose where to save %1$s</string>
+    <string name="file_transfer_one_to_one_only" tools:ignore="MissingTranslation">File sharing is available in one-to-one chats only.</string>
 
     <!-- Context Menu & Pinned -->
     <string name="pin_chat">Pin</string>
@@ -158,6 +171,8 @@
     <string name="search">Search</string>
     <string name="press_to_add">User found, press to add</string>
     <string name="invalid_email">Invalid email address</string>
+    <string name="contact_add_success" tools:ignore="MissingTranslation">Contact request sent to %1$s</string>
+    <string name="contact_add_failed" tools:ignore="MissingTranslation">Could not add contact: %1$s</string>
     <string name="other_contacts">Other Contacts</string>
     <string name="group_count_format">(%1$d/%2$d)</string>
     <string name="create_group">Create Group</string>

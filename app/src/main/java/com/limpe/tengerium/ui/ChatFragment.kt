@@ -6,6 +6,8 @@ import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.provider.OpenableColumns
+import android.text.format.Formatter
 import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
@@ -35,6 +37,8 @@ import com.limpe.tengerium.R
 import com.limpe.tengerium.TengeriumApp
 import com.limpe.tengerium.data.MSNPLoginState
 import com.limpe.tengerium.data.MSNPRepository
+import com.limpe.tengerium.data.IncomingFileTransfer
+import com.limpe.tengerium.data.protocol.FileTransferLimits
 import com.limpe.tengerium.data.protocol.MSNPProto
 import com.limpe.tengerium.data.security.SecurePrefs
 import com.limpe.tengerium.databinding.FragmentChatBinding
@@ -43,12 +47,15 @@ import com.limpe.tengerium.util.AnimationHelper
 import com.limpe.tengerium.util.ChatHistoryExporter
 import com.limpe.tengerium.util.FormattingUtils
 import com.google.android.material.button.MaterialButton
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
 import java.util.*
 
 class ChatFragment : Fragment() {
@@ -73,6 +80,22 @@ class ChatFragment : Fragment() {
             performExport(uri)
         }
     }
+
+    private val sendFileLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) sendSelectedFile(uri)
+    }
+
+    private val saveIncomingFileLauncher = registerForActivityResult(ActivityResultContracts.CreateDocument("*/*")) { uri ->
+        val transfer = pendingIncomingTransfer
+        pendingIncomingTransfer = null
+        if (transfer != null) {
+            if (uri == null) declineIncomingFile(transfer)
+            else saveIncomingFile(transfer, uri)
+        }
+    }
+
+    private var pendingIncomingTransfer: IncomingFileTransfer? = null
+    private val shownIncomingTransferIds = mutableSetOf<String>()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentChatBinding.inflate(inflater, container, false)
@@ -126,6 +149,7 @@ class ChatFragment : Fragment() {
 
         binding.layoutChatHeader.setOnClickListener { openProfile() }
 
+        binding.btnAttach.setOnClickListener { chooseFileToSend() }
         binding.btnSend.setOnClickListener { sendMessage() }
         
         // Инициализация кнопки
@@ -442,6 +466,178 @@ class ChatFragment : Fragment() {
             .start()
     }
 
+    private fun chooseFileToSend() {
+        val target = contactAccount ?: return
+        if (!target.contains('@')) {
+            Toast.makeText(requireContext(), R.string.file_transfer_one_to_one_only, Toast.LENGTH_LONG).show()
+            return
+        }
+        sendFileLauncher.launch(arrayOf("*/*"))
+    }
+
+    private fun sendSelectedFile(uri: Uri) {
+        val target = contactAccount ?: return
+        val appContext = context?.applicationContext ?: return
+        val fileName = queryDisplayName(uri)
+        val knownSize = queryFileSize(uri)
+        if (knownSize != null && knownSize > FileTransferLimits.MAX_FILE_SIZE_BYTES) {
+            Toast.makeText(appContext, R.string.file_transfer_too_large, Toast.LENGTH_LONG).show()
+            return
+        }
+
+        val progress = AlertDialog.Builder(requireContext())
+            .setMessage(R.string.sending_file)
+            .setCancelable(false)
+            .create()
+        progress.show()
+        viewLifecycleOwner.lifecycleScope.launch {
+            var cachedFile: File? = null
+            try {
+                val stagedFile = withContext(Dispatchers.IO) {
+                    val destination = File.createTempFile("msn-send-", ".tmp", appContext.cacheDir)
+                    try {
+                        val input = appContext.contentResolver.openInputStream(uri)
+                            ?: throw IllegalStateException("Unable to open the selected file")
+                        input.use { source ->
+                            destination.outputStream().use { sink ->
+                                val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                                var total = 0L
+                                while (true) {
+                                    val count = source.read(buffer)
+                                    if (count < 0) break
+                                    total += count
+                                    if (total > FileTransferLimits.MAX_FILE_SIZE_BYTES) throw FileTooLargeException()
+                                    sink.write(buffer, 0, count)
+                                }
+                            }
+                        }
+                        if (destination.length() == 0L) throw IllegalArgumentException("Empty files are not supported")
+                        destination
+                    } catch (error: Throwable) {
+                        destination.delete()
+                        throw error
+                    }
+                }
+                cachedFile = stagedFile
+                withContext(Dispatchers.IO) { repository.sendFile(target, fileName, stagedFile) }
+                if (isAdded) Toast.makeText(appContext, R.string.file_sent, Toast.LENGTH_SHORT).show()
+            } catch (error: Exception) {
+                if (isAdded) {
+                    val message = if (error is FileTooLargeException) {
+                        getString(R.string.file_transfer_too_large)
+                    } else {
+                        getString(R.string.file_send_failed, error.message ?: error.javaClass.simpleName)
+                    }
+                    Toast.makeText(appContext, message, Toast.LENGTH_LONG).show()
+                }
+            } finally {
+                cachedFile?.delete()
+                progress.dismiss()
+            }
+        }
+    }
+
+    private fun queryDisplayName(uri: Uri): String {
+        val displayName = requireContext().contentResolver.query(
+            uri,
+            arrayOf(OpenableColumns.DISPLAY_NAME),
+            null,
+            null,
+            null
+        )?.use { cursor ->
+            val index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            if (index >= 0 && cursor.moveToFirst()) cursor.getString(index) else null
+        }
+        return (displayName ?: "file")
+            .substringAfterLast('/')
+            .substringAfterLast('\\')
+            .take(120)
+            .ifBlank { "file" }
+    }
+
+    private fun queryFileSize(uri: Uri): Long? = requireContext().contentResolver.query(
+        uri,
+        arrayOf(OpenableColumns.SIZE),
+        null,
+        null,
+        null
+    )?.use { cursor ->
+        val index = cursor.getColumnIndex(OpenableColumns.SIZE)
+        if (index >= 0 && cursor.moveToFirst() && !cursor.isNull(index)) cursor.getLong(index) else null
+    }
+
+    private fun showIncomingFileRequest(transfer: IncomingFileTransfer) {
+        if (!isAdded) return
+        val tooLarge = transfer.fileSize > FileTransferLimits.MAX_FILE_SIZE_BYTES.toULong()
+        val safeName = transfer.fileName.substringAfterLast('/').substringAfterLast('\\').take(120).ifBlank { "file" }
+        val message = if (tooLarge) {
+            getString(R.string.file_transfer_too_large)
+        } else {
+            val size = Formatter.formatFileSize(requireContext(), transfer.fileSize.toLong())
+            getString(R.string.incoming_file_message, transfer.sender, safeName, size)
+        }
+        val builder = AlertDialog.Builder(requireContext())
+            .setTitle(R.string.incoming_file_title)
+            .setMessage(message)
+            .setCancelable(false)
+        if (tooLarge) {
+            builder.setPositiveButton(android.R.string.ok) { _, _ -> declineIncomingFile(transfer) }
+        } else {
+            builder
+                .setPositiveButton(R.string.accept_file) { _, _ ->
+                    pendingIncomingTransfer = transfer
+                    saveIncomingFileLauncher.launch(safeName)
+                }
+                .setNegativeButton(R.string.decline_file) { _, _ -> declineIncomingFile(transfer) }
+        }
+        builder.show()
+    }
+
+    private fun declineIncomingFile(transfer: IncomingFileTransfer) {
+        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+            runCatching { repository.declineIncomingFileTransfer(transfer) }
+        }
+    }
+
+    private fun saveIncomingFile(transfer: IncomingFileTransfer, uri: Uri) {
+        val appContext = context?.applicationContext ?: return
+        val progress = AlertDialog.Builder(requireContext())
+            .setMessage(getString(R.string.file_transfer_save_prompt, transfer.fileName))
+            .setCancelable(false)
+            .create()
+        progress.show()
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    val output = appContext.contentResolver.openOutputStream(uri)
+                        ?: throw IllegalStateException("Unable to open the save location")
+                    output.use { destination ->
+                        val bytes = repository.acceptIncomingFileTransfer(transfer)
+                        if (bytes.size.toLong() > FileTransferLimits.MAX_FILE_SIZE_BYTES) throw FileTooLargeException()
+                        destination.write(bytes)
+                    }
+                }
+                if (isAdded) Toast.makeText(appContext, R.string.file_received, Toast.LENGTH_SHORT).show()
+            } catch (error: Exception) {
+                if (repository.incomingFileTransfers.value.any { it.id == transfer.id }) {
+                    declineIncomingFile(transfer)
+                }
+                if (isAdded) {
+                    val message = if (error is FileTooLargeException) {
+                        getString(R.string.file_transfer_too_large)
+                    } else {
+                        getString(R.string.file_receive_failed, error.message ?: error.javaClass.simpleName)
+                    }
+                    Toast.makeText(appContext, message, Toast.LENGTH_LONG).show()
+                }
+            } finally {
+                progress.dismiss()
+            }
+        }
+    }
+
+    private class FileTooLargeException : Exception()
+
     private fun sendMessage() {
         val text = binding.etMessage.text.toString().trim()
         if (text.isNotEmpty() && contactAccount != null) {
@@ -470,6 +666,20 @@ class ChatFragment : Fragment() {
                                 if (messages.isNotEmpty()) {
                                     binding.rvMessages.scrollToPosition(adapter.itemCount - 1)
                                 }
+                            }
+                        }
+                    }
+
+                    launch {
+                        repository.incomingFileTransfers.collectLatest { transfers ->
+                            val normalizedAccount = account.lowercase(Locale.ROOT).trim()
+                            val transfer = transfers.firstOrNull {
+                                it.target.lowercase(Locale.ROOT).trim() == normalizedAccount &&
+                                    it.id !in shownIncomingTransferIds
+                            }
+                            if (transfer != null && isAdded) {
+                                shownIncomingTransferIds.add(transfer.id)
+                                showIncomingFileRequest(transfer)
                             }
                         }
                     }
