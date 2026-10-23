@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="16dp"
+    android:height="16dp"
+    android:viewportWidth="16"
+    android:viewportHeight="16">
+    <!-- Background button frame -->
+    <path
+        android:fillColor="#3C81E3"
+        android:pathData="M1,1 h14 a1,1 0 0,1 1,1 v12 a1,1 0 0,1 -1,1 h-14 a1,1 0 0,1 -1,-1 v-12 a1,1 0 0,1 1,-1 Z" />
+    <path
+        android:strokeColor="#1A4A8E"
+        android:strokeWidth="1"
+        android:pathData="M1.5,1.5 h13 v13 h-13 Z" />
+    <!-- Minus bar -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M4,11 h8 v2 h-8 Z" />
+</vector>

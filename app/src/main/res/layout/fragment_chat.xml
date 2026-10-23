@@ -9,7 +9,7 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="?android:attr/windowBackground">
+        android:background="@drawable/bg_msn_window_background">
 
         <ImageView
             android:id="@+id/ivChatBackground"
@@ -19,211 +19,836 @@
             android:importantForAccessibility="no"
             android:visibility="gone" />
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rvMessages"
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:clipToPadding="false"
-            android:paddingTop="?attr/actionBarSize"
-            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toTopOf="@id/layoutBottom"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
-
+        <!-- 1. WINDOW TITLE BAR (Classic Windows XP Luna Blue TitleBar) -->
         <LinearLayout
-            android:id="@+id/layoutEmpty"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="32dp"
-            android:background="@drawable/bg_placeholder_bubble"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:paddingHorizontal="24dp"
-            android:paddingVertical="12dp"
-            android:visibility="gone"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            tools:visibility="visible">
+            android:id="@+id/layoutWindowHeader"
+            android:layout_width="match_parent"
+            android:layout_height="30dp"
+            android:background="@drawable/bg_msn_xp_titlebar"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="6dp"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/ic_msn_butterfly_small"
+                android:importantForAccessibility="no" />
 
             <TextView
-                android:layout_width="wrap_content"
+                android:id="@+id/tvWindowTitle"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:gravity="center"
-                android:text="@string/empty_chats_title"
-                android:textAppearance="@style/TextAppearance.Material3.LabelLarge"
-                android:textColor="@color/white" />
+                android:layout_weight="1"
+                android:layout_marginStart="6dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="@color/white"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                tools:text="MSN Messenger - Conversation" />
+
+            <!-- Title Bar Control Buttons -->
+            <ImageView
+                android:id="@+id/btnWindowMinimize"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:layout_marginEnd="2dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:src="@drawable/ic_msn_window_min"
+                android:importantForAccessibility="no" />
+
+            <ImageView
+                android:id="@+id/btnWindowMaximize"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:layout_marginEnd="2dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:src="@drawable/ic_msn_window_max"
+                android:importantForAccessibility="no" />
+
+            <ImageView
+                android:id="@+id/btnWindowClose"
+                android:layout_width="22dp"
+                android:layout_height="18dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:src="@drawable/ic_msn_window_close"
+                android:importantForAccessibility="no" />
         </LinearLayout>
 
+        <!-- 2. MENU BAR (File Edit Actions Tools Help) -->
+        <LinearLayout
+            android:id="@+id/layoutMenuBar"
+            android:layout_width="match_parent"
+            android:layout_height="24dp"
+            android:background="@drawable/bg_msn_menu_bar"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="8dp"
+            app:layout_constraintTop_toBottomOf="@id/layoutWindowHeader">
+
+            <TextView
+                android:id="@+id/btnMenuFile"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="6dp"
+                android:text="File"
+                android:textColor="#002166"
+                android:textSize="11sp"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackground" />
+
+            <TextView
+                android:id="@+id/btnMenuEdit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="6dp"
+                android:text="Edit"
+                android:textColor="#002166"
+                android:textSize="11sp"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackground" />
+
+            <TextView
+                android:id="@+id/btnMenuActions"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="6dp"
+                android:text="Actions"
+                android:textColor="#002166"
+                android:textSize="11sp"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackground" />
+
+            <TextView
+                android:id="@+id/btnMenuTools"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="6dp"
+                android:text="Tools"
+                android:textColor="#002166"
+                android:textSize="11sp"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackground" />
+
+            <TextView
+                android:id="@+id/btnMenuHelp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="6dp"
+                android:text="Help"
+                android:textColor="#002166"
+                android:textSize="11sp"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackground" />
+        </LinearLayout>
+
+        <!-- 3. ACTION TOOLBAR (Invite, Send Files, Video, Voice, Activities, Games) -->
         <com.google.android.material.appbar.AppBarLayout
             android:id="@+id/appBarLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@android:color/transparent"
             app:elevation="0dp"
-            app:layout_constraintTop_toTopOf="parent">
+            app:layout_constraintTop_toBottomOf="@id/layoutMenuBar">
 
-            <com.google.android.material.appbar.MaterialToolbar
-                android:id="@+id/toolbar"
+            <LinearLayout
+                android:id="@+id/layoutActionToolbar"
                 android:layout_width="match_parent"
-                android:layout_height="?attr/actionBarSize"
-                app:navigationIcon="@drawable/ic_arrow_back">
+                android:layout_height="48dp"
+                android:background="@drawable/bg_msn_action_bar"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="6dp">
 
-                <androidx.constraintlayout.widget.ConstraintLayout
-                    android:id="@+id/layoutChatHeader"
-                    android:layout_width="wrap_content"
+                <HorizontalScrollView
+                    android:layout_width="0dp"
                     android:layout_height="match_parent"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:background="?attr/selectableItemBackground"
-                    android:paddingEnd="16dp">
-
-                    <com.limpe.tengerium.ui.AvatarStatusView
-                        android:id="@+id/avatarStatusView"
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toTopOf="parent" />
+                    android:layout_weight="1"
+                    android:scrollbars="none">
 
                     <LinearLayout
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:orientation="vertical"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintStart_toEndOf="@id/avatarStatusView"
-                        app:layout_constraintTop_toTopOf="parent">
+                        android:layout_height="match_parent"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
 
+                        <!-- Invite -->
                         <LinearLayout
+                            android:id="@+id/btnActionInvite"
                             android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-
-                            <TextView
-                                android:id="@+id/tvChatName"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:ellipsize="end"
-                                android:maxLines="1"
-                                android:textAppearance="?attr/textAppearanceTitleMedium"
-                                tools:text="" />
+                            android:layout_height="match_parent"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:background="?attr/selectableItemBackground"
+                            android:gravity="center"
+                            android:orientation="horizontal"
+                            android:paddingHorizontal="6dp">
 
                             <ImageView
-                                android:id="@+id/ivChatMuted"
-                                android:layout_width="14dp"
-                                android:layout_height="14dp"
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:src="@drawable/ic_msn_add"
+                                android:importantForAccessibility="no" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
                                 android:layout_marginStart="4dp"
-                                android:alpha="0.6"
-                                android:src="@drawable/ic_notifications_off"
-                                android:visibility="gone"
-                                app:tint="?attr/colorOnSurfaceVariant"
-                                tools:visibility="visible" />
+                                android:text="Invite"
+                                android:textColor="#002B66"
+                                android:textSize="11sp" />
                         </LinearLayout>
+
+                        <!-- Send Files -->
+                        <LinearLayout
+                            android:id="@+id/btnActionSendFile"
+                            android:layout_width="wrap_content"
+                            android:layout_height="match_parent"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:background="?attr/selectableItemBackground"
+                            android:gravity="center"
+                            android:orientation="horizontal"
+                            android:paddingHorizontal="6dp">
+
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:src="@drawable/ic_msn_send_file"
+                                android:importantForAccessibility="no" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="4dp"
+                                android:text="Send Files"
+                                android:textColor="#002B66"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+
+                        <!-- Video -->
+                        <LinearLayout
+                            android:id="@+id/btnActionVideo"
+                            android:layout_width="wrap_content"
+                            android:layout_height="match_parent"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:background="?attr/selectableItemBackground"
+                            android:gravity="center"
+                            android:orientation="horizontal"
+                            android:paddingHorizontal="6dp">
+
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:src="@drawable/ic_msn_video"
+                                android:importantForAccessibility="no" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="4dp"
+                                android:text="Video"
+                                android:textColor="#002B66"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+
+                        <!-- Voice -->
+                        <LinearLayout
+                            android:id="@+id/btnActionVoice"
+                            android:layout_width="wrap_content"
+                            android:layout_height="match_parent"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:background="?attr/selectableItemBackground"
+                            android:gravity="center"
+                            android:orientation="horizontal"
+                            android:paddingHorizontal="6dp">
+
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:src="@drawable/ic_msn_voice"
+                                android:importantForAccessibility="no" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="4dp"
+                                android:text="Voice"
+                                android:textColor="#002B66"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+
+                        <!-- Activities -->
+                        <LinearLayout
+                            android:id="@+id/btnActionActivities"
+                            android:layout_width="wrap_content"
+                            android:layout_height="match_parent"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:background="?attr/selectableItemBackground"
+                            android:gravity="center"
+                            android:orientation="horizontal"
+                            android:paddingHorizontal="6dp">
+
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:src="@drawable/ic_msn_activities"
+                                android:importantForAccessibility="no" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="4dp"
+                                android:text="Activities"
+                                android:textColor="#002B66"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+
+                        <!-- Games -->
+                        <LinearLayout
+                            android:id="@+id/btnActionGames"
+                            android:layout_width="wrap_content"
+                            android:layout_height="match_parent"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:background="?attr/selectableItemBackground"
+                            android:gravity="center"
+                            android:orientation="horizontal"
+                            android:paddingHorizontal="6dp">
+
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:src="@drawable/ic_msn_game"
+                                android:importantForAccessibility="no" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="4dp"
+                                android:text="Games"
+                                android:textColor="#002B66"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+
+                    </LinearLayout>
+                </HorizontalScrollView>
+
+                <!-- MSN Logo & Toolbar Menu -->
+                <ImageView
+                    android:layout_width="36dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_msn_butterfly_small"
+                    android:importantForAccessibility="no" />
+
+                <com.google.android.material.appbar.MaterialToolbar
+                    android:id="@+id/toolbar"
+                    android:layout_width="32dp"
+                    android:layout_height="match_parent"
+                    android:padding="0dp"
+                    app:contentInsetStart="0dp" />
+
+            </LinearLayout>
+        </com.google.android.material.appbar.AppBarLayout>
+
+        <!-- 4. MAIN CHAT WORKSPACE (2 Columns: Left Chat + Input, Right Avatars) -->
+        <LinearLayout
+            android:id="@+id/layoutMainWorkspace"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:orientation="horizontal"
+            android:padding="6dp"
+            app:layout_constraintTop_toBottomOf="@id/appBarLayout"
+            app:layout_constraintBottom_toTopOf="@id/layoutBottomBanner">
+
+            <!-- LEFT COLUMN: Chat History Box + Formatting Strip + Input Box -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <!-- Chat History Frame -->
+                <LinearLayout
+                    android:id="@+id/layoutHistoryBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_msn_history_frame"
+                    android:orientation="vertical">
+
+                    <!-- "To:" Bar -->
+                    <LinearLayout
+                        android:id="@+id/layoutChatHeader"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_msn_to_bar"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="8dp"
+                        android:paddingVertical="4dp">
+
+                        <TextView
+                            android:id="@+id/tvToLabel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="To: "
+                            android:textColor="#555555"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvChatName"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            android:textColor="#111111"
+                            android:textSize="12sp"
+                            android:textStyle="bold"
+                            tools:text="Contact Name" />
+
+                        <ImageView
+                            android:id="@+id/ivChatMuted"
+                            android:layout_width="14dp"
+                            android:layout_height="14dp"
+                            android:layout_marginStart="4dp"
+                            android:alpha="0.6"
+                            android:src="@drawable/ic_notifications_off"
+                            android:visibility="gone"
+                            app:tint="#555555" />
 
                         <TextView
                             android:id="@+id/tvChatStatus"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:textAppearance="?attr/textAppearanceLabelSmall"
-                            tools:text="" />
+                            android:layout_marginStart="6dp"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            android:textColor="#666666"
+                            android:textSize="11sp"
+                            tools:text="Online" />
                     </LinearLayout>
-                </androidx.constraintlayout.widget.ConstraintLayout>
-            </com.google.android.material.appbar.MaterialToolbar>
-        </com.google.android.material.appbar.AppBarLayout>
 
-        <LinearLayout
-            android:id="@+id/layoutBottom"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            app:layout_constraintBottom_toBottomOf="parent">
+                    <!-- RecyclerView for Messages -->
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/rvMessages"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:clipToPadding="false"
+                        android:padding="4dp"
+                        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
 
-            <LinearLayout
-                android:id="@+id/layoutNotFriend"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="?attr/colorErrorContainer"
-                android:orientation="vertical"
-                android:padding="16dp"
-                android:visibility="gone">
+                    <LinearLayout
+                        android:id="@+id/layoutEmpty"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:layout_margin="16dp"
+                        android:background="@drawable/bg_placeholder_bubble"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:paddingHorizontal="16dp"
+                        android:paddingVertical="8dp"
+                        android:visibility="gone"
+                        tools:visibility="visible">
 
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:text="@string/empty_chats_title"
+                            android:textColor="@color/white"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <!-- Not friend warning -->
+                <LinearLayout
+                    android:id="@+id/layoutNotFriend"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:background="?attr/colorErrorContainer"
+                    android:orientation="horizontal"
+                    android:padding="6dp"
+                    android:gravity="center_vertical"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/not_in_contacts"
+                        android:textColor="?attr/colorOnErrorContainer"
+                        android:textSize="11sp" />
+
+                    <Button
+                        android:id="@+id/btnAddToContacts"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/add_to_contacts"
+                        android:textSize="11sp" />
+                </LinearLayout>
+
+                <!-- Typing indicator -->
                 <TextView
+                    android:id="@+id/tvTypingIndicator"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/not_in_contacts"
-                    android:textColor="?attr/colorOnErrorContainer" />
+                    android:layout_marginTop="2dp"
+                    android:alpha="0"
+                    android:background="@drawable/bg_placeholder_bubble"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="2dp"
+                    android:textColor="@color/white"
+                    android:textSize="10sp"
+                    android:visibility="gone" />
 
-                <Button
-                    android:id="@+id/btnAddToContacts"
-                    style="@style/Widget.Material3.Button.TextButton"
-                    android:layout_width="wrap_content"
+                <!-- Formatting & Action Strip (A, Smiley, Voice Clip, Wink, Background, Gift, Nudge) -->
+                <LinearLayout
+                    android:id="@+id/layoutFormattingBar"
+                    android:layout_width="match_parent"
+                    android:layout_height="28dp"
+                    android:layout_marginTop="4dp"
+                    android:background="@drawable/bg_msn_formatting_bar"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="4dp">
+
+                    <ImageView
+                        android:id="@+id/btnFormatFont"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:padding="3dp"
+                        android:src="@drawable/ic_msn_font"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:importantForAccessibility="no" />
+
+                    <ImageView
+                        android:id="@+id/btnFormatEmoticon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:padding="3dp"
+                        android:src="@drawable/ic_msn_smiley"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:importantForAccessibility="no" />
+
+                    <!-- Voice Clip -->
+                    <LinearLayout
+                        android:id="@+id/btnFormatVoiceClip"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackground"
+                        android:gravity="center"
+                        android:paddingHorizontal="4dp">
+
+                        <ImageView
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:src="@drawable/ic_msn_voice_clip"
+                            android:importantForAccessibility="no" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="2dp"
+                            android:text="Voice Clip"
+                            android:textColor="#002B66"
+                            android:textSize="10sp" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:id="@+id/btnFormatWink"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:padding="3dp"
+                        android:src="@drawable/ic_msn_wink"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:importantForAccessibility="no" />
+
+                    <ImageView
+                        android:id="@+id/btnFormatBackground"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:padding="3dp"
+                        android:src="@drawable/ic_msn_bg_photo"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:importantForAccessibility="no" />
+
+                    <ImageView
+                        android:id="@+id/btnFormatGift"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:padding="3dp"
+                        android:src="@drawable/ic_msn_gift"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:importantForAccessibility="no" />
+
+                    <!-- NUDGE BUTTON -->
+                    <ImageView
+                        android:id="@+id/btnFormatNudge"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:padding="3dp"
+                        android:src="@drawable/ic_nudge_menu"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:importantForAccessibility="no"
+                        app:tint="#1C5FA8" />
+
+                </LinearLayout>
+
+                <!-- Input Area Frame -->
+                <LinearLayout
+                    android:id="@+id/layoutBottom"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/add_to_contacts" />
+                    android:layout_marginTop="2dp"
+                    android:background="@drawable/bg_msn_input_box"
+                    android:orientation="vertical"
+                    android:padding="4dp">
+
+                    <LinearLayout
+                        android:id="@+id/layoutInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="bottom"
+                        android:orientation="horizontal">
+
+                        <!-- Attach Button / Image icon -->
+                        <ImageButton
+                            android:id="@+id/btnAttach"
+                            android:layout_width="28dp"
+                            android:layout_height="28dp"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:contentDescription="@string/attach_file"
+                            android:src="@drawable/ic_attach_file"
+                            app:tint="#002B66" />
+
+                        <!-- Text Input Field -->
+                        <EditText
+                            android:id="@+id/etMessage"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:background="@android:color/transparent"
+                            android:hint="@string/type_message"
+                            android:inputType="textMultiLine|textCapSentences"
+                            android:maxLines="4"
+                            android:minHeight="54dp"
+                            android:paddingHorizontal="6dp"
+                            android:textColor="#111111"
+                            android:textSize="13sp" />
+
+                        <!-- Stacked Action Buttons: Send & Search -->
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:layout_marginStart="4dp">
+
+                            <!-- Send Button -->
+                            <Button
+                                android:id="@+id/btnSend"
+                                android:layout_width="64dp"
+                                android:layout_height="30dp"
+                                android:background="@drawable/bg_msn_button"
+                                android:padding="0dp"
+                                android:text="Send"
+                                android:textAllCaps="false"
+                                android:textColor="#002B66"
+                                android:textSize="11sp"
+                                android:textStyle="bold"
+                                app:backgroundTint="@null" />
+
+                            <!-- Search Button -->
+                            <Button
+                                android:id="@+id/btnSearch"
+                                android:layout_width="64dp"
+                                android:layout_height="30dp"
+                                android:layout_marginTop="2dp"
+                                android:background="@drawable/bg_msn_button"
+                                android:padding="0dp"
+                                android:text="Search"
+                                android:textAllCaps="false"
+                                android:textColor="#002B66"
+                                android:textSize="11sp"
+                                app:backgroundTint="@null" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Bottom Input Tabs (Ink & Text) -->
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="end"
+                        android:layout_marginTop="2dp"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:id="@+id/btnTabInk"
+                            android:layout_width="20dp"
+                            android:layout_height="18dp"
+                            android:padding="2dp"
+                            android:src="@drawable/ic_msn_tab_ink"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:importantForAccessibility="no" />
+
+                        <ImageView
+                            android:id="@+id/btnTabText"
+                            android:layout_width="20dp"
+                            android:layout_height="18dp"
+                            android:layout_marginStart="2dp"
+                            android:padding="2dp"
+                            android:src="@drawable/ic_msn_tab_text"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:importantForAccessibility="no" />
+                    </LinearLayout>
+
+                </LinearLayout>
+
             </LinearLayout>
 
-            <TextView
-                android:id="@+id/tvTypingIndicator"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
-                android:layout_marginBottom="2dp"
-                android:alpha="0"
-                android:background="@drawable/bg_placeholder_bubble"
-                android:paddingHorizontal="10dp"
-                android:paddingVertical="2dp"
-                android:textAppearance="?attr/textAppearanceLabelSmall"
-                android:textColor="@color/white"
-                android:visibility="gone" />
-
+            <!-- RIGHT COLUMN: Contact Display Picture & My Display Picture -->
             <LinearLayout
-                android:id="@+id/layoutInput"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="bottom"
-                android:orientation="horizontal"
-                android:padding="8dp">
+                android:id="@+id/layoutRightAvatars"
+                android:layout_width="84dp"
+                android:layout_height="match_parent"
+                android:layout_marginStart="6dp"
+                android:orientation="vertical">
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnAttach"
-                    style="@style/Widget.Material3.Button.IconButton"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:contentDescription="@string/attach_file"
-                    app:icon="@drawable/ic_attach_file"
-                    app:iconPadding="0dp"
-                    app:iconSize="22dp" />
+                <!-- Contact Avatar Box (Top) -->
+                <RelativeLayout
+                    android:id="@+id/cardContactAvatar"
+                    android:layout_width="84dp"
+                    android:layout_height="84dp"
+                    android:background="@drawable/bg_msn_avatar_frame"
+                    android:padding="4dp">
 
-                <EditText
-                    android:id="@+id/etMessage"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:background="@android:color/transparent"
-                    android:hint="@string/type_message"
-                    android:inputType="textMultiLine|textCapSentences"
-                    android:maxLines="5"
-                    android:minHeight="48dp"
-                    android:paddingHorizontal="12dp" />
+                    <com.limpe.tengerium.ui.AvatarStatusView
+                        android:id="@+id/avatarStatusView"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_centerInParent="true" />
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnSend"
-                    style="@style/Widget.Material3.Button.IconButton"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:layout_marginStart="4dp"
-                    app:icon="@drawable/ic_send_message"
-                    app:iconGravity="textStart"
-                    app:iconPadding="0dp"
-                    app:iconSize="24dp"
-                    app:iconTint="@null"
-                    app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full" />
+                    <!-- Side Drawer Arrow -->
+                    <ImageView
+                        android:layout_width="8dp"
+                        android:layout_height="12dp"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:src="@drawable/ic_msn_chevron"
+                        android:importantForAccessibility="no"
+                        app:tint="#888888" />
+                </RelativeLayout>
+
+                <!-- Spacer -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1" />
+
+                <!-- My Avatar Box (Bottom) -->
+                <RelativeLayout
+                    android:id="@+id/cardMyAvatar"
+                    android:layout_width="84dp"
+                    android:layout_height="84dp"
+                    android:background="@drawable/bg_msn_avatar_frame"
+                    android:padding="4dp">
+
+                    <ImageView
+                        android:id="@+id/ivMyAvatar"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/duck"
+                        android:importantForAccessibility="no" />
+
+                    <!-- Side Drawer Arrow -->
+                    <ImageView
+                        android:layout_width="8dp"
+                        android:layout_height="12dp"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:src="@drawable/ic_msn_chevron"
+                        android:importantForAccessibility="no"
+                        app:tint="#888888" />
+                </RelativeLayout>
+
             </LinearLayout>
+
         </LinearLayout>
 
+        <!-- 5. BOTTOM STATUS / BANNER ("Click for new Emoticons and Theme Packs from Blue Mountain") -->
+        <LinearLayout
+            android:id="@+id/layoutBottomBanner"
+            android:layout_width="match_parent"
+            android:layout_height="22dp"
+            android:background="@drawable/bg_msn_status_banner"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="8dp"
+            app:layout_constraintBottom_toBottomOf="parent">
+
+            <TextView
+                android:id="@+id/tvBottomBannerText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="Click for new Emoticons and Theme Packs from Blue Mountain"
+                android:textColor="#335588"
+                android:textSize="10sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=".::"
+                android:textColor="#7799BB"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Floating Scroll To Bottom Button -->
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/btnScrollToBottom"
             android:layout_width="wrap_content"
@@ -231,7 +856,7 @@
             android:layout_margin="16dp"
             android:visibility="gone"
             app:fabSize="mini"
-            app:layout_constraintBottom_toTopOf="@id/layoutBottom"
+            app:layout_constraintBottom_toTopOf="@id/layoutBottomBanner"
             app:layout_constraintEnd_toEndOf="parent"
             app:srcCompat="@drawable/ic_arrow_down" />
 

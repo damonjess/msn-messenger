@@ -224,10 +224,14 @@ class MainActivity : AppCompatActivity() {
                 handleLoggedInElsewhereDude()
             }
             is MSNPLoginState.Error -> {
-                if (state.message == "AUTH_INVALID_PASSWORD" || state.message == "AUTH_INVALID_ACCOUNT") {
+                val isAuthErr = state.message.contains("AUTH_INVALID_PASSWORD", ignoreCase = true) ||
+                        state.message.contains("AUTH_INVALID_ACCOUNT", ignoreCase = true) ||
+                        state.message.contains("ERROR_INVALID_PASSWORD", ignoreCase = true) ||
+                        state.message.contains("InvalidPassword", ignoreCase = true)
+                if (isAuthErr) {
                     binding.dudeReconnectingLayout.visibility = View.GONE
                     reconnectAnim?.stop()
-                    if (state.message == "AUTH_INVALID_PASSWORD") {
+                    if (state.message.contains("INVALID_PASSWORD", ignoreCase = true)) {
                         handleSessionExpired()
                     }
                 } else {

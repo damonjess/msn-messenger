@@ -190,4 +190,68 @@ object FormattingUtils {
             match = regex.find(ssb)
         }
     }
+
+    /**
+     * Преобразует технические ошибки протокола/Uniffi в понятные пользователю локализованные сообщения.
+     */
+    fun formatErrorMessage(context: Context, rawError: String?): String {
+        if (rawError.isNullOrBlank()) {
+            return context.getString(R.string.error_connection_failed)
+        }
+
+        val err = rawError.trim()
+
+        return when {
+            err.contains("AUTH_INVALID_PASSWORD", ignoreCase = true) ||
+            err.contains("ERROR_INVALID_PASSWORD", ignoreCase = true) ||
+            err.contains("InvalidPassword", ignoreCase = true) ||
+            err.contains("AuthenticationHeaderNotFound", ignoreCase = true) ||
+            err.contains("CouldNotGetAuthenticationString", ignoreCase = true) -> {
+                context.getString(R.string.error_invalid_password)
+            }
+
+            err.contains("LOGGED_IN_ANOTHER_DEVICE", ignoreCase = true) ||
+            err.contains("ERROR_LOGGED_IN_ANOTHER_DEVICE", ignoreCase = true) -> {
+                context.getString(R.string.error_logged_in_another_device)
+            }
+
+            err.contains("NO_INTERNET", ignoreCase = true) -> {
+                context.getString(R.string.no_internet)
+            }
+
+            err.contains("ERROR_CONNECTION_FAILED", ignoreCase = true) ||
+            err.contains("CONNECTION_FAILED", ignoreCase = true) ||
+            err.contains("CONNECTION_LOST", ignoreCase = true) ||
+            err.contains("DISCONNECTED_UNEXPECTEDLY", ignoreCase = true) ||
+            err.contains("CouldNotConnectToServer", ignoreCase = true) ||
+            err.contains("ResolutionException", ignoreCase = true) ||
+            err.contains("ServerIsBusy", ignoreCase = true) ||
+            err.contains("ServerException", ignoreCase = true) ||
+            err.contains("Disconnected", ignoreCase = true) ||
+            err.contains("ProtocolNotSupported", ignoreCase = true) ||
+            err.contains("UnknownHostException", ignoreCase = true) ||
+            err.contains("ConnectException", ignoreCase = true) ||
+            err.contains("SocketTimeoutException", ignoreCase = true) ||
+            err.contains("SSLException", ignoreCase = true) ||
+            err.contains("uniffi", ignoreCase = true) ||
+            err.contains("msnp11_sdk", ignoreCase = true) ||
+            err.contains("SdkException", ignoreCase = true) ||
+            err.contains("InternalException", ignoreCase = true) -> {
+                context.getString(R.string.error_connection_failed)
+            }
+
+            else -> {
+                if (err.contains("uniffi") || err.contains("Exception") || err.contains(".")) {
+                    val simpleName = err.substringAfterLast('.').substringAfterLast('$')
+                    if (simpleName.isNotBlank() && !simpleName.contains("uniffi", ignoreCase = true)) {
+                        simpleName
+                    } else {
+                        context.getString(R.string.error_connection_failed)
+                    }
+                } else {
+                    err
+                }
+            }
+        }
+    }
 }

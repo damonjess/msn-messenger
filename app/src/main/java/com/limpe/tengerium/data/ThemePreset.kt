@@ -25,6 +25,26 @@ data class ThemePreset(
 ) {
     companion object {
         val presets = listOf(
+            // MSN Messenger Classic
+            ThemePreset(
+                "MSN Classic",
+                light = ThemeColors(
+                    accentColor = "#2C598A".toColorInt(),
+                    incomingBubbleColor = "#F0F5FA".toColorInt(),
+                    outgoingBubbleColor = "#D9E6F5".toColorInt(),
+                    chatBackgroundColor = "#D8E7F5".toColorInt(),
+                    onIncomingTextColor = Color.BLACK,
+                    onOutgoingTextColor = "#001A4D".toColorInt()
+                ),
+                dark = ThemeColors(
+                    accentColor = "#2B5278".toColorInt(),
+                    incomingBubbleColor = "#182634".toColorInt(),
+                    outgoingBubbleColor = "#2B5278".toColorInt(),
+                    chatBackgroundColor = "#102128".toColorInt(),
+                    onIncomingTextColor = Color.WHITE,
+                    onOutgoingTextColor = Color.WHITE
+                )
+            ),
             // Стандартная
             ThemePreset(
                 "Standard",

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="20dp"
+    android:height="16dp"
+    android:viewportWidth="20"
+    android:viewportHeight="16">
+    <!-- Red XP button frame -->
+    <path
+        android:fillColor="#E04333"
+        android:pathData="M1,1 h18 a1,1 0 0,1 1,1 v12 a1,1 0 0,1 -1,1 h-18 a1,1 0 0,1 -1,-1 v-12 a1,1 0 0,1 1,-1 Z" />
+    <path
+        android:strokeColor="#801810"
+        android:strokeWidth="1"
+        android:pathData="M1.5,1.5 h17 v13 h-17 Z" />
+    <!-- Cross X -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:pathData="M6,4 L14,12 M14,4 L6,12" />
+</vector>

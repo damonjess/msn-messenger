@@ -22,6 +22,7 @@ import com.limpe.tengerium.data.security.SecurePrefs
 import com.limpe.tengerium.databinding.FragmentAuthBinding
 import com.limpe.tengerium.util.AnimationHelper
 import com.limpe.tengerium.util.ConnectionDialogHelper
+import com.limpe.tengerium.util.FormattingUtils
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlin.system.exitProcess
@@ -99,19 +100,14 @@ class AuthFragment : Fragment() {
                         is MSNPLoginState.Success -> {
                             binding.loadingLayout.visibility = View.GONE
                             binding.btnLogin.visibility = View.VISIBLE
+                            binding.tvError.visibility = View.GONE
                             findNavController().navigate(R.id.action_AuthFragment_to_MainFragment)
                         }
                         is MSNPLoginState.Error -> {
                             binding.loadingLayout.visibility = View.GONE
                             binding.btnLogin.visibility = View.VISIBLE
                             
-                            val displayMessage = when {
-                                state.message == "ERROR_CONNECTION_FAILED" || state.message == "CONNECTION_FAILED" -> 
-                                    getString(R.string.error_connection_failed)
-                                state.message == "ERROR_INVALID_PASSWORD" || state.message == "AUTH_INVALID_PASSWORD" -> 
-                                    getString(R.string.error_invalid_password)
-                                else -> state.message
-                            }
+                            val displayMessage = FormattingUtils.formatErrorMessage(requireContext(), state.message)
                             
                             binding.tvError.text = displayMessage
                             binding.tvError.visibility = View.VISIBLE
@@ -131,6 +127,7 @@ class AuthFragment : Fragment() {
                         is MSNPLoginState.Idle -> {
                             binding.loadingLayout.visibility = View.GONE
                             binding.btnLogin.visibility = View.VISIBLE
+                            binding.tvError.visibility = View.GONE
                         }
                     }
                 }

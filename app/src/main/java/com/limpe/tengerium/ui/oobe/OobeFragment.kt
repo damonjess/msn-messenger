@@ -35,6 +35,7 @@ import com.limpe.tengerium.ui.AuthViewModel
 import com.limpe.tengerium.ui.AvatarUtils
 import com.limpe.tengerium.util.AnimationHelper
 import com.limpe.tengerium.util.ConnectionDialogHelper
+import com.limpe.tengerium.util.FormattingUtils
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -180,14 +181,17 @@ class OobeFragment : Fragment() {
                         is MSNPLoginState.Loading -> {
                             authHolder?.setLoading(true)
                             authHolder?.authBinding?.tvLoadingStatus?.visibility = View.GONE
+                            authHolder?.authBinding?.tvError?.visibility = View.GONE
                         }
                         is MSNPLoginState.Reconnecting -> {
                             authHolder?.setLoading(true)
                             authHolder?.authBinding?.tvLoadingStatus?.visibility = View.VISIBLE
                             authHolder?.authBinding?.tvLoadingStatus?.text = getString(R.string.reconnecting_in, state.secondsRemaining)
+                            authHolder?.authBinding?.tvError?.visibility = View.GONE
                         }
                         is MSNPLoginState.Success -> {
                             authHolder?.setLoading(false)
+                            authHolder?.authBinding?.tvError?.visibility = View.GONE
                             hideKeyboard()
                             val account = state.account.lowercase(Locale.ROOT).trim()
                             if (securePrefs.isOobeDone(account)) {
@@ -199,13 +203,7 @@ class OobeFragment : Fragment() {
                         is MSNPLoginState.Error -> {
                             authHolder?.setLoading(false)
                             
-                            val displayMessage = when {
-                                state.message == "ERROR_CONNECTION_FAILED" || state.message == "CONNECTION_FAILED" -> 
-                                    getString(R.string.error_connection_failed)
-                                state.message == "ERROR_INVALID_PASSWORD" || state.message == "AUTH_INVALID_PASSWORD" -> 
-                                    getString(R.string.error_invalid_password)
-                                else -> state.message
-                            }
+                            val displayMessage = FormattingUtils.formatErrorMessage(requireContext(), state.message)
                             
                             authHolder?.authBinding?.tvError?.text = displayMessage
                             authHolder?.authBinding?.tvError?.visibility = View.VISIBLE
@@ -217,10 +215,12 @@ class OobeFragment : Fragment() {
                         }
                         is MSNPLoginState.NoInternet -> {
                             authHolder?.setLoading(false)
-                            authHolder?.authBinding?.tvError?.visibility = View.GONE
+                            authHolder?.authBinding?.tvError?.text = getString(R.string.no_internet)
+                            authHolder?.authBinding?.tvError?.visibility = View.VISIBLE
                         }
                         is MSNPLoginState.Idle -> {
                             authHolder?.setLoading(false)
+                            authHolder?.authBinding?.tvError?.visibility = View.GONE
                         }
                     }
                 }

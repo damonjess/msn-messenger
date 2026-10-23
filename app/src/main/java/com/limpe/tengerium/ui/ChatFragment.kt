@@ -132,6 +132,82 @@ class ChatFragment : Fragment() {
         applyDynamicDesign()
         loadChatBackground()
 
+        // MSN Title bar window controls
+        binding.btnWindowClose.setOnClickListener { performBackNavigation() }
+        binding.btnWindowMinimize.setOnClickListener { performBackNavigation() }
+        binding.btnWindowMaximize.setOnClickListener { performBackNavigation() }
+
+        // MSN Menu bar items
+        binding.btnMenuFile.setOnClickListener { startExport() }
+        binding.btnMenuEdit.setOnClickListener { showClearChatDialog() }
+        binding.btnMenuActions.setOnClickListener { showCustomMenu(it) }
+        binding.btnMenuTools.setOnClickListener { showCustomMenu(it) }
+        binding.btnMenuHelp.setOnClickListener {
+            val parent = findMainFragment()
+            if (parent != null) {
+                parent.showDetail(AboutFragment(), addToBackStack = true)
+            } else {
+                runCatching { findNavController().navigate(R.id.AboutFragment) }
+            }
+        }
+
+        // MSN Action toolbar items
+        binding.btnActionInvite.setOnClickListener {
+            val bundle = bundleOf("account" to (contactAccount ?: ""))
+            val parent = findMainFragment()
+            if (parent != null) {
+                val inviteFragment = InviteParticipantsFragment().apply { arguments = bundle }
+                parent.showDetail(inviteFragment, addToBackStack = true)
+            } else {
+                runCatching { findNavController().navigate(R.id.action_ChatFragment_to_InviteParticipantsFragment, bundle) }
+            }
+        }
+        binding.btnActionSendFile.setOnClickListener { chooseFileToSend() }
+        binding.btnActionVideo.setOnClickListener {
+            Toast.makeText(requireContext(), "Video feature selected", Toast.LENGTH_SHORT).show()
+        }
+        binding.btnActionVoice.setOnClickListener { chooseFileToSend() }
+        binding.btnActionActivities.setOnClickListener {
+            Toast.makeText(requireContext(), "Activities feature selected", Toast.LENGTH_SHORT).show()
+        }
+        binding.btnActionGames.setOnClickListener {
+            val parent = findMainFragment()
+            if (parent != null) {
+                parent.showDetail(EasterEggFragment(), addToBackStack = true)
+            } else {
+                runCatching { findNavController().navigate(R.id.EasterEggFragment) }
+            }
+        }
+
+        // Formatting Bar items
+        binding.btnFormatEmoticon.setOnClickListener { binding.etMessage.append(" :-)") }
+        binding.btnFormatVoiceClip.setOnClickListener { chooseFileToSend() }
+        binding.btnFormatWink.setOnClickListener { sendNudge() }
+        binding.btnFormatNudge.setOnClickListener { sendNudge() }
+        binding.btnFormatFont.setOnClickListener {
+            Toast.makeText(requireContext(), "Font formatting menu", Toast.LENGTH_SHORT).show()
+        }
+        binding.btnFormatBackground.setOnClickListener {
+            val parent = findMainFragment()
+            if (parent != null) {
+                parent.showDetail(ChatSettingsFragment(), addToBackStack = true)
+            } else {
+                runCatching { findNavController().navigate(R.id.ChatSettingsFragment) }
+            }
+        }
+
+        // Input & Avatars
+        binding.btnSearch.setOnClickListener { showClearChatDialog() }
+        binding.cardContactAvatar.setOnClickListener { openProfile() }
+        binding.cardMyAvatar.setOnClickListener {
+            val parent = findMainFragment()
+            if (parent != null) {
+                parent.showDetail(AvatarLibraryFragment(), addToBackStack = true)
+            } else {
+                runCatching { findNavController().navigate(R.id.AvatarLibraryFragment) }
+            }
+        }
+
         binding.toolbar.setNavigationOnClickListener { 
             performBackNavigation()
         }
@@ -687,8 +763,21 @@ class ChatFragment : Fragment() {
                     launch {
                         repository.contacts.collectLatest { contacts ->
                             val contact = contacts.find { it.account.equals(account, ignoreCase = true) }
-                            binding.tvChatName.text = FormattingUtils.formatBBCode(contact?.nickname ?: account)
+                            val contactDisplayName = contact?.nickname ?: account
+                            val formattedName = FormattingUtils.formatBBCode(contactDisplayName)
+                            binding.tvChatName.text = formattedName
+                            binding.tvWindowTitle.text = "$formattedName - Conversation"
                             binding.avatarStatusView.setAvatar(contact?.avatarUrl, account)
+                            
+                            val myAvatarPath = securePrefs.avatarPath
+                            if (!myAvatarPath.isNullOrEmpty()) {
+                                binding.ivMyAvatar.load(File(myAvatarPath)) {
+                                    error(R.drawable.duck)
+                                    placeholder(R.drawable.duck)
+                                }
+                            } else {
+                                binding.ivMyAvatar.setImageResource(R.drawable.duck)
+                            }
                             
                             val status = contact?.status ?: MSNPProto.Status.OFFLINE
                             updateStatusUI(status, contact?.personalMessage)

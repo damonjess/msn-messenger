@@ -20,10 +20,11 @@ object BubbleStyleHelper {
         val context = card.context
         val useMaterialYou = securePrefs.useMaterialYou
 
-        card.strokeWidth = 0
-        card.cardElevation = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 2f, context.resources.displayMetrics)
+        card.strokeWidth = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 1f, context.resources.displayMetrics).toInt()
+        card.strokeColor = if (isIncoming) Color.parseColor("#B5D0EB") else Color.parseColor("#92B5D8")
+        card.cardElevation = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 1f, context.resources.displayMetrics)
         
-        val radius = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16f, context.resources.displayMetrics)
+        val radius = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 8f, context.resources.displayMetrics)
         card.radius = radius
 
         if (useMaterialYou) {
