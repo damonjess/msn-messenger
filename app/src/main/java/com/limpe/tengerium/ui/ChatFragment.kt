@@ -58,9 +58,9 @@ import com.limpe.tengerium.databinding.FragmentChatBinding
 import com.limpe.tengerium.databinding.LayoutChatMenuBinding
 import com.limpe.tengerium.ui.call.CallActivity
 import com.limpe.tengerium.ui.call.CallManager
-import com.limpe.tengerium.ui.games.GameActivity
 import com.limpe.tengerium.ui.games.GameKind
 import com.limpe.tengerium.ui.games.GameManager
+import com.limpe.tengerium.ui.games.GamesActivity
 import com.limpe.tengerium.util.AnimationHelper
 import com.limpe.tengerium.util.ChatHistoryExporter
 import com.limpe.tengerium.util.FormattingUtils
@@ -239,13 +239,16 @@ class ChatFragment : Fragment() {
         binding.btnActionVideo.setOnClickListener { startCall(CallManager.Media.VIDEO) }
         binding.btnActionVoice.setOnClickListener { openVoiceClip() }
         binding.btnActionActivities.setOnClickListener { showActivitiesMenu(it) }
-        binding.btnActionGames.setOnClickListener {
+        binding.btnActionGames.setOnClickListener { showGamesLobby() }
+        // The chocolate-cake easter egg lives behind a long press on Games.
+        binding.btnActionGames.setOnLongClickListener {
             val parent = findMainFragment()
             if (parent != null) {
                 parent.showDetail(EasterEggFragment(), addToBackStack = true)
             } else {
                 runCatching { findNavController().navigate(R.id.EasterEggFragment) }
             }
+            true
         }
 
         // Formatting Bar items
@@ -872,14 +875,25 @@ class ChatFragment : Fragment() {
         val popup = PopupMenu(requireContext(), anchor)
         popup.menu.add(0, 1, 0, R.string.game_tic_tac_toe)
         popup.menu.add(0, 2, 1, R.string.game_rps)
+        popup.menu.add(0, 3, 2, R.string.game_connect_four)
+        popup.menu.add(0, 4, 3, R.string.game_pool)
         popup.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 1 -> startSharedActivity(GameKind.TIC_TAC_TOE)
                 2 -> startSharedActivity(GameKind.ROCK_PAPER_SCISSORS)
+                3 -> startSharedActivity(GameKind.CONNECT_FOUR)
+                4 -> startSharedActivity(GameKind.POOL)
             }
             true
         }
         popup.show()
+    }
+
+    /** The games tab: a list of everything two contacts can play right now. */
+    private fun showGamesLobby() {
+        val intent = Intent(requireContext(), GamesActivity::class.java)
+            .putExtra(GamesActivity.EXTRA_PEER, contactAccount.orEmpty())
+        startActivity(intent)
     }
 
     private fun startSharedActivity(kind: GameKind) {
@@ -892,7 +906,7 @@ class ChatFragment : Fragment() {
             Toast.makeText(requireContext(), R.string.game_busy, Toast.LENGTH_SHORT).show()
             return
         }
-        startActivity(Intent(requireContext(), GameActivity::class.java))
+        startActivity(Intent(requireContext(), GameManager.activityFor(kind)))
     }
 
     private fun showAttachMenu(anchor: View) {

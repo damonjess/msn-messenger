@@ -324,7 +324,8 @@ class MSNPRepository @Inject constructor(val context: Context) : MSNPProtocolLis
         if (!normalized.contains('@')) return
         scope.launch {
             try {
-                val session = withTimeoutOrNull(12_000) { sessionManager.getOrOpenSession(normalized) }
+                // A marker sent right after a cold start may have to wait for the session to open.
+                val session = withTimeoutOrNull(25_000) { sessionManager.getOrOpenSession(normalized) }
                 if (session == null) {
                     Log.w(TAG, "No chat session for call signalling to $normalized")
                     return@launch

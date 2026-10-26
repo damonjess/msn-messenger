@@ -119,6 +119,11 @@ class GameActivity : AppCompatActivity() {
                 binding.btnLeave.visibility = View.VISIBLE
                 setBoardEnabled(false)
             }
+            is GameManager.State.Four, is GameManager.State.Pool -> {
+                // Those games render on their own screens.
+                finish()
+                return
+            }
             is GameManager.State.Finished -> {
                 binding.tvGameStatus.text = gameEndText(state)
                 binding.layoutInvite.visibility = View.GONE
@@ -157,6 +162,10 @@ class GameActivity : AppCompatActivity() {
                 binding.layoutChoices.visibility = View.VISIBLE
                 binding.btnNextRound.visibility = if (state.roundResolved) View.VISIBLE else View.GONE
                 drawThrows(state)
+            }
+            else -> {
+                // Connect Four and pool have their own screens.
+                finish()
             }
         }
     }

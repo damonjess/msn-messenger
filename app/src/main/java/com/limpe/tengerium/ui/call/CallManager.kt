@@ -709,7 +709,12 @@ object CallManager {
     private fun releaseAudioFocus() {
         val audioManager = appContext.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
         runCatching {
-            audioFocusRequest?.let { audioManager?.abandonAudioFocusRequest(it) }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                audioFocusRequest?.let { audioManager?.abandonAudioFocusRequest(it) }
+            } else {
+                @Suppress("DEPRECATION")
+                audioManager?.abandonAudioFocus(null)
+            }
             audioFocusRequest = null
         }
         runCatching { audioManager?.mode = AudioManager.MODE_NORMAL }

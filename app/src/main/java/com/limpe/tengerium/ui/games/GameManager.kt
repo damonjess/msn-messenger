@@ -55,6 +55,29 @@ object GameManager {
             val myTurn: Boolean get() = turn == myMark
         }
 
+        data class Four(
+            val peer: String,
+            val board: String,
+            val myMark: Char,
+            val turn: Char,
+            val myScore: Int,
+            val theirScore: Int
+        ) : State() {
+            val myTurn: Boolean get() = turn == myMark
+        }
+
+        data class Pool(
+            val peer: String,
+            val table: String,
+            val myTurn: Boolean,
+            val myGroup: Int,
+            val theirGroup: Int,
+            val myScore: Int,
+            val theirScore: Int,
+            val note: PoolNote?,
+            val noteWasMine: Boolean
+        ) : State()
+
         data class Over(
             val peer: String,
             val kind: GameKind,
@@ -83,7 +106,20 @@ object GameManager {
         var gamesPlayed = 0
         var active = false
 
-        fun opponentMark(): Char = if (myMark == 'X') 'O' else 'X'
+        var fourBoard: String = ConnectFour.emptyBoard()
+        var poolTable: String = PoolTable.encode(PoolTable.rack())
+        var poolMyGroup: Int = PoolTable.OPEN
+        var poolTheirGroup: Int = PoolTable.OPEN
+        var poolMyTurn = true
+        var poolNote: PoolNote? = null
+        var poolNoteWasMine = true
+
+        fun opponentMark(): Char = when (myMark) {
+            'X' -> 'O'
+            'O' -> 'X'
+            'R' -> 'Y'
+            else -> 'R'
+        }
 
         fun starter(): Char = if (gamesPlayed % 2 == 0) 'X' else 'O'
     }
@@ -125,7 +161,6 @@ object GameManager {
         cancelTimeout()
         clearInviteNotification()
         send(current, GameProtocol.accept(current.id))
-        current.myMark = 'O'
         beginRound(current)
         return true
     }
@@ -176,6 +211,32 @@ object GameManager {
         return true
     }
 
+    /** Connect Four: drops a disc into a column. */
+    fun dropDisc(column: Int): Boolean {
+        val current = session ?: return false
+        if (!current.active || current.kind != GameKind.CONNECT_FOUR) return false
+        if (current.turn != current.myMark) return false
+        val next = ConnectFour.drop(current.fourBoard, column, current.myMark) ?: return false
+        send(current, GameProtocol.move(current.id, column.toString()))
+        current.fourBoard = next
+        afterConnectFourMove(current)
+        return true
+    }
+
+    /**
+     * Pool: takes a shot and returns the frames to play on this screen. The rules are worked
+     * out once, here, and the resulting table is what the opponent receives.
+     */
+    fun takeShot(angleDegrees: Float, power: Float): List<List<PoolBall>>? {
+        val current = session ?: return null
+        if (!current.active || current.kind != GameKind.POOL || !current.poolMyTurn) return null
+        val shot = PoolTable.shoot(PoolTable.decode(current.poolTable), angleDegrees, power)
+        val resolution = PoolRules.resolve(current.poolTable, current.poolMyGroup, current.poolTheirGroup, shot)
+        send(current, GameProtocol.shot(current.id, PoolWire.encode(resolution)))
+        applyPoolResolution(current, resolution, mine = true)
+        return shot.frames
+    }
+
     /** Rock-paper-scissors: clears the table for the next throw. */
     fun nextRound(): Boolean {
         val current = session ?: return false
@@ -193,7 +254,7 @@ object GameManager {
         if (_state.value !is State.Over) return false
         send(current, GameProtocol.rematch(current.id))
         resetGame(current)
-        emitPlaying(current)
+        emitForKind(current)
         return true
     }
 
@@ -238,15 +299,25 @@ object GameManager {
             is GameProtocol.Signal.Move -> {
                 val current = session ?: return
                 if (current.id != signal.gameId || !current.active) return
-                if (current.kind == GameKind.TIC_TAC_TOE) applyOpponentCell(current, signal.move)
-                else applyOpponentThrow(current, signal.move)
+                when (current.kind) {
+                    GameKind.TIC_TAC_TOE -> applyOpponentCell(current, signal.move)
+                    GameKind.CONNECT_FOUR -> applyOpponentColumn(current, signal.move)
+                    else -> applyOpponentThrow(current, signal.move)
+                }
+            }
+            is GameProtocol.Signal.Shot -> {
+                val current = session ?: return
+                if (current.id != signal.gameId || !current.active) return
+                if (current.kind != GameKind.POOL || current.poolMyTurn) return
+                val resolution = PoolWire.decode(signal.payload) ?: return
+                applyPoolResolution(current, resolution, mine = false)
             }
             is GameProtocol.Signal.Rematch -> {
                 val current = session ?: return
                 if (current.id != signal.gameId) return
                 if (_state.value !is State.Over) return
                 resetGame(current)
-                emitPlaying(current)
+                emitForKind(current)
             }
             is GameProtocol.Signal.NextRound -> {
                 val current = session ?: return
@@ -282,12 +353,33 @@ object GameManager {
 
     private fun beginRound(current: Session) {
         current.active = true
+        current.myMark = when {
+            current.kind == GameKind.CONNECT_FOUR -> if (current.outgoing) 'R' else 'Y'
+            else -> if (current.outgoing) 'X' else 'O'
+        }
         current.board = TicTacToe.emptyBoard()
-        current.turn = current.starter()
+        current.fourBoard = ConnectFour.emptyBoard()
+        current.poolTable = PoolTable.encode(PoolTable.rack())
+        current.poolMyGroup = PoolTable.OPEN
+        current.poolTheirGroup = PoolTable.OPEN
+        current.poolNote = null
         current.myChoice = null
         current.theirChoice = null
         current.roundResolved = false
-        emitPlaying(current)
+        when (current.kind) {
+            GameKind.CONNECT_FOUR -> {
+                current.turn = 'R'
+                emitFour(current)
+            }
+            GameKind.POOL -> {
+                current.poolMyTurn = current.outgoing
+                emitPool(current)
+            }
+            else -> {
+                current.turn = current.starter()
+                emitPlaying(current)
+            }
+        }
     }
 
     private fun resetGame(current: Session) {
@@ -296,10 +388,28 @@ object GameManager {
         current.myScore = 0
         current.theirScore = 0
         current.board = TicTacToe.emptyBoard()
-        current.turn = current.starter()
+        current.fourBoard = ConnectFour.emptyBoard()
+        current.poolTable = PoolTable.encode(PoolTable.rack())
+        current.poolMyGroup = PoolTable.OPEN
+        current.poolTheirGroup = PoolTable.OPEN
+        current.poolNote = null
         current.myChoice = null
         current.theirChoice = null
         current.roundResolved = false
+        when (current.kind) {
+            GameKind.CONNECT_FOUR -> current.turn = 'R'
+            GameKind.POOL -> current.poolMyTurn =
+                if (current.gamesPlayed % 2 == 1) !current.outgoing else current.outgoing
+            else -> current.turn = current.starter()
+        }
+    }
+
+    private fun emitForKind(current: Session) {
+        when (current.kind) {
+            GameKind.CONNECT_FOUR -> emitFour(current)
+            GameKind.POOL -> emitPool(current)
+            else -> emitPlaying(current)
+        }
     }
 
     private fun clearRound(current: Session) {
@@ -332,6 +442,61 @@ object GameManager {
                 current.turn = if (current.turn == current.myMark) current.opponentMark() else current.myMark
                 emitPlaying(current)
             }
+        }
+    }
+
+    private fun applyOpponentColumn(current: Session, move: String) {
+        val column = move.toIntOrNull() ?: return
+        if (current.turn == current.myMark) return
+        val next = ConnectFour.drop(current.fourBoard, column, current.opponentMark()) ?: return
+        current.fourBoard = next
+        afterConnectFourMove(current)
+    }
+
+    private fun afterConnectFourMove(current: Session) {
+        val winner = ConnectFour.winner(current.fourBoard)
+        when {
+            winner == current.myMark -> {
+                current.myScore += 1
+                emitOver(current, Outcome.WIN)
+            }
+            winner != null -> {
+                current.theirScore += 1
+                emitOver(current, Outcome.LOSS)
+            }
+            ConnectFour.isDraw(current.fourBoard) -> emitOver(current, Outcome.DRAW)
+            else -> {
+                current.turn = if (current.turn == current.myMark) current.opponentMark() else current.myMark
+                emitFour(current)
+            }
+        }
+    }
+
+    /** Applies a resolved shot locally and mirrors it when it came from the opponent. */
+    private fun applyPoolResolution(current: Session, resolution: PoolResolution, mine: Boolean) {
+        if (mine) {
+            current.poolMyGroup = resolution.shooterGroup
+            current.poolTheirGroup = resolution.opponentGroup
+            current.poolMyTurn = resolution.shooterContinues
+        } else {
+            current.poolMyGroup = resolution.opponentGroup
+            current.poolTheirGroup = resolution.shooterGroup
+            current.poolMyTurn = !resolution.shooterContinues
+        }
+        current.poolTable = resolution.table
+        current.poolNote = resolution.note
+        current.poolNoteWasMine = mine
+
+        when (resolution.winner) {
+            PoolResolution.SHOOTER -> {
+                if (mine) current.myScore += 1 else current.theirScore += 1
+                emitOver(current, if (mine) Outcome.WIN else Outcome.LOSS)
+            }
+            PoolResolution.OPPONENT -> {
+                if (mine) current.theirScore += 1 else current.myScore += 1
+                emitOver(current, if (mine) Outcome.LOSS else Outcome.WIN)
+            }
+            else -> emitPool(current)
         }
     }
 
@@ -372,6 +537,33 @@ object GameManager {
             myChoice = current.myChoice,
             theirChoice = current.theirChoice,
             roundResolved = current.roundResolved
+        )
+    }
+
+    private fun emitFour(current: Session) {
+        if (session !== current) return
+        _state.value = State.Four(
+            peer = current.peer,
+            board = current.fourBoard,
+            myMark = current.myMark,
+            turn = current.turn,
+            myScore = current.myScore,
+            theirScore = current.theirScore
+        )
+    }
+
+    private fun emitPool(current: Session) {
+        if (session !== current) return
+        _state.value = State.Pool(
+            peer = current.peer,
+            table = current.poolTable,
+            myTurn = current.poolMyTurn,
+            myGroup = current.poolMyGroup,
+            theirGroup = current.poolTheirGroup,
+            myScore = current.myScore,
+            theirScore = current.theirScore,
+            note = current.poolNote,
+            noteWasMine = current.poolNoteWasMine
         )
     }
 
@@ -421,7 +613,7 @@ object GameManager {
 
     private fun showInvite(peer: String, kind: GameKind) {
         if (AppForeground.visible) {
-            val intent = Intent(appContext, GameActivity::class.java)
+            val intent = Intent(appContext, activityFor(kind))
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
             runCatching { appContext.startActivity(intent) }
                 .onFailure { postInviteNotification(peer, kind) }
@@ -441,7 +633,7 @@ object GameManager {
                 )
             )
         }
-        val intent = Intent(appContext, GameActivity::class.java)
+        val intent = Intent(appContext, activityFor(kind))
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         val pending = PendingIntent.getActivity(
             appContext, NOTIFICATION_ID, intent,
@@ -468,6 +660,22 @@ object GameManager {
     fun gameTitleRes(kind: GameKind): Int = when (kind) {
         GameKind.TIC_TAC_TOE -> R.string.game_tic_tac_toe
         GameKind.ROCK_PAPER_SCISSORS -> R.string.game_rps
+        GameKind.CONNECT_FOUR -> R.string.game_connect_four
+        GameKind.POOL -> R.string.game_pool
+    }
+
+    fun gameDescriptionRes(kind: GameKind): Int = when (kind) {
+        GameKind.TIC_TAC_TOE -> R.string.game_tic_tac_toe_desc
+        GameKind.ROCK_PAPER_SCISSORS -> R.string.game_rps_desc
+        GameKind.CONNECT_FOUR -> R.string.game_connect_four_desc
+        GameKind.POOL -> R.string.game_pool_desc
+    }
+
+    /** The screen each game is played on. */
+    fun activityFor(kind: GameKind): Class<out android.app.Activity> = when (kind) {
+        GameKind.CONNECT_FOUR -> ConnectFourActivity::class.java
+        GameKind.POOL -> PoolActivity::class.java
+        else -> GameActivity::class.java
     }
 
     // ---- helpers -----------------------------------------------------------------------
