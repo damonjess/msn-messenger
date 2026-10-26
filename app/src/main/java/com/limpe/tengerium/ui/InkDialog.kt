@@ -2,11 +2,11 @@ package com.limpe.tengerium.ui
 
 import android.app.Dialog
 import android.content.Context
-import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.PointF
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.view.Gravity
@@ -19,15 +19,14 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.limpe.tengerium.R
-import java.io.File
-import java.io.FileOutputStream
+import kotlin.math.hypot
 
 /**
- * MSN's "handwriting" tab: draw with a finger or stylus and send the drawing as a PNG.
+ * MSN's "handwriting" tab: draw with a finger or stylus and send the drawing.
  */
 class InkDialog(
     context: Context,
-    private val onSend: (File) -> Unit
+    private val onSend: (InkDrawing) -> Unit
 ) : Dialog(context) {
 
     private lateinit var canvasView: InkCanvasView
@@ -189,37 +188,24 @@ class InkDialog(
             hintText.text = "Draw something first."
             return
         }
-        val bitmap = canvasView.exportBitmap()
-        val maxWidth = 480
-        val scaled = if (bitmap.width > maxWidth) {
-            val height = (bitmap.height.toFloat() * maxWidth / bitmap.width).toInt().coerceAtLeast(1)
-            Bitmap.createScaledBitmap(bitmap, maxWidth, height, true)
-        } else {
-            bitmap
-        }
-        val file = File(context.cacheDir, "ink-${System.currentTimeMillis()}.png")
-        val saved = runCatching {
-            FileOutputStream(file).use { output -> scaled.compress(Bitmap.CompressFormat.PNG, 100, output) }
-        }
-        if (scaled !== bitmap) scaled.recycle()
-        bitmap.recycle()
-        if (saved.isFailure || file.length() == 0L) {
-            file.delete()
-            hintText.text = "Could not save the drawing."
-            return
-        }
-        onSend(file)
+        onSend(canvasView.exportDrawing())
         dismiss()
     }
 
-    /** A very small freehand canvas: each stroke keeps its own colour. */
+    /** A very small freehand canvas: each stroke keeps its own colour and points. */
     private class InkCanvasView(context: Context) : View(context) {
 
-        private class Stroke(val paint: Paint, val path: Path)
+        private class Stroke(
+            val color: Int,
+            val paint: Paint,
+            val path: Path,
+            val points: MutableList<PointF>
+        )
 
         private val strokes = mutableListOf<Stroke>()
         private var active: Stroke? = null
         private val strokeWidth = 5f * context.resources.displayMetrics.density
+        private val minPointDistance = 1.2f * context.resources.displayMetrics.density
 
         var inkColor: Int = Color.BLACK
 
@@ -237,15 +223,11 @@ class InkDialog(
             invalidate()
         }
 
-        fun exportBitmap(): Bitmap {
-            val width = width.coerceAtLeast(1)
-            val height = height.coerceAtLeast(1)
-            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-            val canvas = Canvas(bitmap)
-            canvas.drawColor(Color.WHITE)
-            strokes.forEach { canvas.drawPath(it.path, it.paint) }
-            return bitmap
-        }
+        fun exportDrawing(): InkDrawing = InkDrawing(
+            strokes = strokes.map { InkStroke(it.color, it.points.toList()) },
+            width = width.coerceAtLeast(1),
+            height = height.coerceAtLeast(1)
+        )
 
         override fun onDraw(canvas: Canvas) {
             super.onDraw(canvas)
@@ -267,13 +249,21 @@ class InkDialog(
                         moveTo(event.x, event.y)
                         lineTo(event.x + 0.1f, event.y + 0.1f)
                     }
-                    active = Stroke(paint, path).also { strokes.add(it) }
+                    active = Stroke(inkColor, paint, path, mutableListOf(PointF(event.x, event.y)))
+                        .also { strokes.add(it) }
                     invalidate()
                     return true
                 }
                 MotionEvent.ACTION_MOVE -> {
-                    active?.path?.lineTo(event.x, event.y)
-                    invalidate()
+                    val stroke = active ?: return true
+                    val last = stroke.points.lastOrNull()
+                    if (last == null ||
+                        hypot(event.x - last.x, event.y - last.y) >= minPointDistance
+                    ) {
+                        stroke.points.add(PointF(event.x, event.y))
+                        stroke.path.lineTo(event.x, event.y)
+                        invalidate()
+                    }
                     return true
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {

@@ -450,8 +450,10 @@ class MSNPService : Service() {
 
             val effectiveNickname = nickname.ifEmpty { normalizedSender }
             val wink = com.limpe.tengerium.ui.WinkCatalog.fromMessage(message)
+            val isDrawing = com.limpe.tengerium.ui.InkStore.markerId(message) != null
             val displayMessage = when {
                 message == "[NUDGE]" -> context.getString(R.string.nudge_received_sys, effectiveNickname)
+                isDrawing -> context.getString(R.string.handwriting_preview)
                 wink != null -> "${wink.emoji}  ${wink.name}"
                 else -> message
             }

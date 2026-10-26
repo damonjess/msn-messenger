@@ -318,6 +318,8 @@ class MainActivity : AppCompatActivity() {
             viewBinding.tvNotificationName.text = FormattingUtils.formatBBCode(incoming.nickname.ifEmpty { incoming.senderAccount })
             viewBinding.tvNotificationMessage.text = when {
                 incoming.message == "[NUDGE]" -> getString(R.string.nudge_received)
+                com.limpe.tengerium.ui.InkStore.markerId(incoming.message) != null ->
+                    getString(R.string.handwriting_preview)
                 else -> com.limpe.tengerium.ui.WinkCatalog.fromMessage(incoming.message)
                     ?.let { "${it.emoji}  ${it.name}" }
                     ?: incoming.message

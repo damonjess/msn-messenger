@@ -913,33 +913,36 @@ class ChatFragment : Fragment() {
         }.show()
     }
 
-    /** Publishes a drawing as an inline message with embedded payload. */
-    private fun sendInk(file: File) {
+    /** Publishes a drawing as an inline message that renders on the recipient's device. */
+    private fun sendInk(drawing: InkDrawing) {
         val target = contactAccount
         val appContext = context?.applicationContext
-        if (target == null || appContext == null || !target.contains('@')) {
-            file.delete()
-            return
-        }
+        if (target == null || appContext == null || !target.contains('@')) return
         val id = InkStore.newId()
-        val stored = InkStore.storeFile(appContext, id, file)
-        file.delete()
-        if (stored == null) {
+
+        // Keep a local copy first so the drawing shows in this conversation immediately.
+        val png = InkCodec.pngBytes(drawing)
+        if (png == null || !InkStore.storeBytes(appContext, id, png)) {
             Toast.makeText(appContext, R.string.handwriting_send_failed, Toast.LENGTH_LONG).show()
             return
         }
 
-        // Publish the chat marker immediately. This preserves the existing chat-send
-        // behavior; the attachment transfer runs independently in the background.
-        val markerText = InkStore.marker(id, stored)
-        repository.sendMessage(target, markerText)
-        lifecycleScope.launch {
-            try {
-                withContext(Dispatchers.IO) {
-                    repository.sendFile(target, InkStore.fileName(id), stored)
+        // The drawing rides inside the message itself: MSNP file transfers are peer-to-peer
+        // and fail across mobile networks, which left the recipient with "(image not downloaded)".
+        val payload = InkCodec.encode(drawing, InkStore.MAX_INLINE_BYTES)
+        repository.sendMessage(target, InkStore.marker(id, payload))
+
+        if (payload == null) {
+            // Unusually busy drawing: fall back to the peer-to-peer image transfer.
+            lifecycleScope.launch {
+                try {
+                    withContext(Dispatchers.IO) {
+                        val file = InkStore.file(appContext, id) ?: return@withContext
+                        repository.sendFile(target, InkStore.fileName(id), file)
+                    }
+                } catch (e: Exception) {
+                    Log.e("ChatFragment", "Failed to send handwriting image $id", e)
                 }
-            } catch (e: Exception) {
-                Log.e("ChatFragment", "Failed to send handwriting image $id", e)
             }
         }
     }
