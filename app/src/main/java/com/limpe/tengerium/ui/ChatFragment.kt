@@ -929,14 +929,17 @@ class ChatFragment : Fragment() {
             return
         }
 
-        // Send the marker with inline image payload for 100% reliable instant delivery
+        // Publish the chat marker immediately. This preserves the existing chat-send
+        // behavior; the attachment transfer runs independently in the background.
         val markerText = InkStore.marker(id, stored)
         repository.sendMessage(target, markerText)
-        
-        // Also send the actual file via P2P for compatibility and proper storage on the recipient's side
         lifecycleScope.launch {
-            withContext(Dispatchers.IO) {
-                repository.sendFile(target, InkStore.fileName(id), stored)
+            try {
+                withContext(Dispatchers.IO) {
+                    repository.sendFile(target, InkStore.fileName(id), stored)
+                }
+            } catch (e: Exception) {
+                Log.e("ChatFragment", "Failed to send handwriting image $id", e)
             }
         }
     }
