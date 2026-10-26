@@ -59,9 +59,10 @@ class TengeriumApp : Application() {
 
         // MSNPService.start(this) // Перенесено в MainActivity для предотвращения ForegroundServiceStartNotAllowedException
         
-        // Автоматический вход только если OOBE завершен для текущего аккаунта
+        // A saved password means this account was explicitly remembered. Reconnect on
+        // every app launch even if the legacy auto-sign-in toggle was previously off.
         val savedAcc = securePrefs.getSavedAccount()
-        if (savedAcc != null && securePrefs.autoSignIn && securePrefs.isOobeDone(savedAcc)) {
+        if (savedAcc != null && securePrefs.getSavedPassword() != null && securePrefs.isOobeDone(savedAcc)) {
             repository.autoLogin()
         }
     }

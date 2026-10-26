@@ -65,6 +65,7 @@ class MainViewModel(private val repository: MSNPRepository) : ViewModel() {
 
     // Всё, пацаны, я ливаю.
     fun logout() {
+        ConversationTabs.clear()
         repository.logout()
     }
 

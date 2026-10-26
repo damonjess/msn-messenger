@@ -309,15 +309,17 @@ class ChatsFragment : Fragment() {
                     binding.tvSubtitle.text = spannable
                 } else {
                     val wink = WinkCatalog.fromMessage(decrypted)
+                    val isInk = InkStore.processMarker(context, decrypted) != null
                     val body = when {
                         decrypted == "[JOINED]" -> context.getString(R.string.user_joined_chat, item.senderAccount)
                         decrypted == "[LEFT]" -> context.getString(R.string.user_left_chat, item.senderAccount)
                         decrypted.startsWith("[GROUP_UPDATE]") -> context.getString(R.string.group_participants_updated)
+                        isInk -> context.getString(R.string.handwriting_preview)
                         wink != null -> "${wink.emoji}  ${wink.name}"
                         else -> FormattingUtils.formatBBCode(decrypted)
                     }
 
-                    binding.tvSubtitle.text = if (!item.isIncoming && !decrypted.startsWith("[")) {
+                    binding.tvSubtitle.text = if (!item.isIncoming && (isInk || !decrypted.startsWith("["))) {
                         context.getString(R.string.chat_me_prefix, body)
                     } else {
                         body

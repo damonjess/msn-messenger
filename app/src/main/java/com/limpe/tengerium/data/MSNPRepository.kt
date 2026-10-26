@@ -15,6 +15,7 @@ import com.limpe.tengerium.domain.model.Contact
 import com.limpe.tengerium.domain.model.Group
 import com.limpe.tengerium.util.UiConstants
 import com.limpe.tengerium.ui.AvatarUtils
+import kotlinx.coroutines.Dispatchers
 import com.limpe.tengerium.util.NetworkObserver
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -727,6 +728,20 @@ class MSNPRepository @Inject constructor(val context: Context) : MSNPProtocolLis
             request = request,
             session = session
         )
+        val inkId = com.limpe.tengerium.ui.InkStore.idFromFileName(fileName)
+        if (inkId != null && fileSize <= 4UL * 1024UL * 1024UL) {
+            Log.d("MSNPRepository", "Auto-accepting incoming ink drawing: $fileName for inkId $inkId")
+            scope.launch(Dispatchers.IO) {
+                try {
+                    val bytes = acceptIncomingFileTransfer(transfer)
+                    Log.d("MSNPRepository", "Successfully received ink drawing $inkId (${bytes.size} bytes)")
+                    com.limpe.tengerium.ui.InkStore.storeBytes(context.applicationContext, inkId, bytes)
+                } catch (e: Exception) {
+                    Log.e("MSNPRepository", "Failed to accept incoming ink drawing $inkId", e)
+                }
+            }
+            return
+        }
         scope.launch {
             _incomingFileTransfers.update { pending -> pending + transfer }
         }

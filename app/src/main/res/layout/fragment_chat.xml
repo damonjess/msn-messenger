@@ -384,6 +384,26 @@
                 android:layout_weight="1"
                 android:orientation="vertical">
 
+                <!-- Conversation tabs (shown when more than one chat is open) -->
+                <HorizontalScrollView
+                    android:id="@+id/scrollChatTabs"
+                    android:layout_width="match_parent"
+                    android:layout_height="26dp"
+                    android:layout_marginTop="2dp"
+                    android:clipToPadding="false"
+                    android:overScrollMode="never"
+                    android:scrollbars="none"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <LinearLayout
+                        android:id="@+id/layoutChatTabs"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:gravity="bottom"
+                        android:orientation="horizontal" />
+                </HorizontalScrollView>
+
                 <!-- Chat History Frame -->
                 <LinearLayout
                     android:id="@+id/layoutHistoryBox"

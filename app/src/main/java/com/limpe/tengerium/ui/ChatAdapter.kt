@@ -175,14 +175,37 @@ class ChatAdapter(
             val context = itemView.context
 
             val colorSplit = com.limpe.tengerium.util.MsnTextFormat.splitColor(decryptedText)
-            binding.tvMessageBody.text = Emoticons.apply(
-                context,
-                FormattingUtils.formatBBCode(colorSplit.text),
-                binding.tvMessageBody.textSize
-            )
+            val density = context.resources.displayMetrics.density
+            val inkId = InkStore.processMarker(context, decryptedText)
+            val imageWidth = minOf(
+                (250 * density).toInt(),
+                (context.resources.displayMetrics.widthPixels * 0.5f - 28 * density).toInt()
+            ).coerceAtLeast((80 * density).toInt())
+            val inkBitmap = inkId?.let { InkStore.bitmap(context, it, imageWidth) }
+            var inkRendered = false
+
+            if (inkBitmap != null) {
+                val drawing = android.text.SpannableStringBuilder("\uFFFC")
+                drawing.setSpan(
+                    android.text.style.ImageSpan(context, inkBitmap, android.text.style.ImageSpan.ALIGN_BOTTOM),
+                    0, 1, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                )
+                binding.tvMessageBody.text = drawing
+                binding.tvMessageBody.movementMethod = null
+                inkRendered = true
+            } else {
+                binding.tvMessageBody.movementMethod = LinkMovementMethod.getInstance()
+                val formatted = FormattingUtils.formatBBCode(colorSplit.text)
+                val withEmoticons = Emoticons.apply(context, formatted, binding.tvMessageBody.textSize)
+                binding.tvMessageBody.text = if (inkId != null) {
+                    context.getString(R.string.handwriting_unavailable)
+                } else {
+                    CustomEmoticons.apply(context, withEmoticons, binding.tvMessageBody.textSize)
+                }
+            }
             binding.tvTimestamp.text = timeFormat.format(Date(message.timestamp))
             
-            Linkify.addLinks(binding.tvMessageBody, Linkify.WEB_URLS)
+            if (!inkRendered) Linkify.addLinks(binding.tvMessageBody, Linkify.WEB_URLS)
 
             binding.root.setOnLongClickListener {
                 onLongClick(message)
@@ -216,7 +239,7 @@ class ChatAdapter(
             )
 
             // Sender's font colour, only when it is readable on this bubble
-            colorSplit.color?.let { rgb ->
+            if (!inkRendered) colorSplit.color?.let { rgb ->
                 val fg = 0xFF000000.toInt() or rgb
                 val bg = binding.cardMessage.cardBackgroundColor.defaultColor or 0xFF000000.toInt()
                 if (androidx.core.graphics.ColorUtils.calculateContrast(fg, bg) >= 3.0) {
@@ -245,7 +268,7 @@ class ChatAdapter(
                 binding.cardMessage.scaleY = 1f
             }
 
-            if (securePrefs.showLinkPreview) {
+            if (!inkRendered && securePrefs.showLinkPreview) {
                 val url = LinkPreviewHelper.extractUrl(decryptedText)
                 if (url != null) {
                     binding.cardLinkPreview.setOnClickListener {

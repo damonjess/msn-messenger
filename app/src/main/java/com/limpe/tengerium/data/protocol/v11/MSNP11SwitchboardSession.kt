@@ -341,7 +341,12 @@ class MSNP11SwitchboardSession(
                 throw IllegalStateException("Switchboard session is not connected")
             }
             val wrapper = rustWrapper ?: throw IllegalStateException("Switchboard session is closed")
+            Log.d(TAG, "Calling wrapper.sendFile to $account, file=$fileName (${file.length()} bytes)")
             wrapper.sendFile(MSNPUtils.normalizeEmail(account), fileName, file.readBytes())
+            Log.d(TAG, "wrapper.sendFile completed for $fileName")
+        } catch (e: Exception) {
+            Log.e(TAG, "wrapper.sendFile failed for $fileName", e)
+            throw e
         } finally {
             resetInactivityTimer()
         }

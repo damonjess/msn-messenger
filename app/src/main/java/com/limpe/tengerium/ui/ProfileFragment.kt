@@ -482,6 +482,7 @@ class ProfileFragment : DialogFragment() {
     }
 
     private fun logout() {
+        ConversationTabs.clear()
         repository.logout()
         findNavController().navigate(R.id.AuthFragment)
         if (showsDialog) dismiss()

@@ -19,6 +19,7 @@ import android.telephony.TelephonyManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.RemoteInput
+import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import com.limpe.tengerium.MainActivity
 import com.limpe.tengerium.R
@@ -80,7 +81,8 @@ class MSNPService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        createNotificationChannels()
+        runCatching { createNotificationChannels() }
+            .onFailure { Log.e("MSNPService", "Could not create notification channels: ${it.message}") }
         // Вызываем startForeground немедленно в onCreate
         updateForegroundNotification(null)
         
@@ -89,6 +91,7 @@ class MSNPService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        updateForegroundNotification(null)
         if (!isRepositoryObserved) {
             observeRepository()
             isRepositoryObserved = true
@@ -231,17 +234,50 @@ class MSNPService : Service() {
     }
 
     private fun updateForegroundNotification(statusText: String?) {
-        val notification = createForegroundNotification(statusText)
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                startForeground(NOTIFICATION_ID_FOREGROUND, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
-            } else {
-                startForeground(NOTIFICATION_ID_FOREGROUND, notification)
+        val notification = runCatching { createForegroundNotification(statusText) }.getOrNull()
+        if (notification != null) {
+            try {
+                ServiceCompat.startForeground(
+                    this,
+                    NOTIFICATION_ID_FOREGROUND,
+                    notification,
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
+                )
+                isForeground = true
+                return
+            } catch (e: Exception) {
+                Log.e("MSNPService", "Failed to start foreground service: ${e.message}")
             }
-            isForeground = true
-        } catch (e: Exception) {
-            Log.e("MSNPService", "Failed to start foreground service: ${e.message}")
         }
+
+        // One minimal retry, then stop rather than leaving the pending start request unpaid:
+        // Android kills the process with ForegroundServiceDidNotStartInTimeException otherwise.
+        val fallback = runCatching {
+            NotificationCompat.Builder(this, CHANNEL_ID_FOREGROUND)
+                .setContentTitle(getString(R.string.app_name))
+                .setContentText(getString(R.string.status_offline))
+                .setSmallIcon(R.drawable.ntficn)
+                .setOngoing(true)
+                .setSilent(true)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .build()
+        }.getOrNull()
+        if (fallback != null) {
+            try {
+                ServiceCompat.startForeground(
+                    this,
+                    NOTIFICATION_ID_FOREGROUND,
+                    fallback,
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
+                )
+                isForeground = true
+                return
+            } catch (e: Exception) {
+                Log.e("MSNPService", "Fallback foreground notification failed: ${e.message}")
+            }
+        }
+        isForeground = false
+        stopSelf()
     }
 
     private fun createForegroundNotification(statusText: String?): Notification {

@@ -367,6 +367,26 @@
     <string name="whats_new_title">What\'s new</string>
 
     <string name="msn_unavailable">This feature isn\'t available yet</string>
+
+    <!-- Conversation tabs, custom emoticons, voice clips, handwriting -->
+    <string name="close_conversation_tab">Close %1$s</string>
+    <string name="add_custom_emoticon">Add custom emoticon</string>
+    <string name="custom_emoticon_added">Added %1$s</string>
+    <string name="custom_emoticon_hint">Code, for example :party:</string>
+    <string name="custom_emoticon_message">Choose an image (GIFs animate) and the code that should turn into it.</string>
+    <string name="custom_emoticon_invalid">Use 2–24 characters, no spaces or brackets</string>
+    <string name="custom_emoticon_duplicate">That code is already used</string>
+    <string name="remove_custom_emoticon">Remove %1$s?</string>
+    <string name="remove">Remove</string>
+    <string name="send_photo">Send photo</string>
+    <string name="send_file">Send file</string>
+    <string name="voice_clip">Voice clip</string>
+    <string name="handwriting">Handwriting</string>
+    <string name="voice_clip_permission_needed">Microphone permission is needed for voice clips</string>
+    <string name="handwriting_unavailable">✏️ Handwriting (image not downloaded)</string>
+    <string name="handwriting_preview">✏️ Handwriting</string>
+    <string name="handwriting_send_failed">Could not save the drawing</string>
+    <string name="handwriting_delivery_failed">Drawing added to this chat, but it could not be delivered to the other person</string>
     <string name="format_color">Text colour…</string>
     <string name="msn_signed_in">has just signed in</string>
 </resources>

@@ -18,6 +18,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.slidingpanelayout.widget.SlidingPaneLayout
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import com.limpe.tengerium.R
 import com.limpe.tengerium.TengeriumApp
@@ -453,9 +454,25 @@ class MainFragment : Fragment() {
         tabLayoutMediator = TabLayoutMediator(binding.tabLayout, binding.viewPager) { tab, position ->
             tab.setCustomView(R.layout.view_tab_item)
             val titles = listOf(getString(R.string.tab_contacts), getString(R.string.tab_chats), getString(R.string.tab_profile))
-            tab.customView?.findViewById<TextView>(R.id.tabTitle)?.text = titles.getOrNull(position)
+            tab.customView?.findViewById<TextView>(R.id.tabTitle)?.apply {
+                text = titles.getOrNull(position)
+                setTextColor(if (tab.isSelected) Color.parseColor("#1F59B1") else Color.parseColor("#17345E"))
+            }
         }
         tabLayoutMediator?.attach()
+        binding.tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+            override fun onTabSelected(tab: TabLayout.Tab) {
+                tab.customView?.findViewById<TextView>(R.id.tabTitle)
+                    ?.setTextColor(Color.parseColor("#1F59B1"))
+            }
+
+            override fun onTabUnselected(tab: TabLayout.Tab) {
+                tab.customView?.findViewById<TextView>(R.id.tabTitle)
+                    ?.setTextColor(Color.parseColor("#17345E"))
+            }
+
+            override fun onTabReselected(tab: TabLayout.Tab) = Unit
+        })
     }
 
     private fun applyDynamicDesign() {

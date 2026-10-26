@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewTreeObserver
+import android.view.WindowManager
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -73,12 +74,23 @@ class MainActivity : AppCompatActivity() {
         if (checkTimeBomb()) return
 
         enableEdgeToEdge()
+        window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        val rootPaddingLeft = binding.root.paddingLeft
+        val rootPaddingTop = binding.root.paddingTop
+        val rootPaddingRight = binding.root.paddingRight
+        val rootPaddingBottom = binding.root.paddingBottom
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            view.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
+            view.setPadding(
+                rootPaddingLeft + systemBars.left,
+                rootPaddingTop + systemBars.top,
+                rootPaddingRight + systemBars.right,
+                rootPaddingBottom + maxOf(systemBars.bottom, ime.bottom)
+            )
             insets
         }
 
@@ -175,7 +187,10 @@ class MainActivity : AppCompatActivity() {
         deepLinkHandler.handleIntent(intent)
         
         // Автоматический вход при запуске, если сохранены учетные данные
-        if (securePrefs.autoSignIn && securePrefs.getSavedAccount() != null && repository.loginState.value is MSNPLoginState.Idle) {
+        // A saved password is the user's clear signal to remember this account between
+        // launches; connect in the background instead of requiring a tap on the profile.
+        if (securePrefs.rememberMe && securePrefs.getSavedAccount() != null &&
+            securePrefs.getSavedPassword() != null && repository.loginState.value is MSNPLoginState.Idle) {
             repository.autoLogin()
         }
 

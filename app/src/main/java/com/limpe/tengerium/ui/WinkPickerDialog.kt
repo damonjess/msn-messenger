@@ -11,6 +11,7 @@ import android.widget.GridLayout
 import android.widget.TextView
 import com.limpe.tengerium.R
 import com.limpe.tengerium.databinding.DialogWinkPickerBinding
+import com.limpe.tengerium.util.WinkSoundPlayer
 
 /**
  * The classic "Select a Wink" picker: pick a wink, preview it, submit it to the chat.
@@ -26,6 +27,7 @@ class WinkPickerDialog(
 
     init {
         setContentView(binding.root)
+        setOnDismissListener { WinkSoundPlayer.stop() }
         window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
         window?.setLayout(
             (320 * context.resources.displayMetrics.density).toInt(),
@@ -78,6 +80,7 @@ class WinkPickerDialog(
     }
 
     private fun playPreview() {
+        WinkSoundPlayer.play(context, selected.id)
         val preview = binding.tvSelectedEmoji
         preview.animate().cancel()
         preview.scaleX = 1f

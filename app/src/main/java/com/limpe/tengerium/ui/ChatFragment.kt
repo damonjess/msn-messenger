@@ -2,26 +2,38 @@ package com.limpe.tengerium.ui
 
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
+import android.animation.ValueAnimator
+import android.Manifest
 import android.app.Activity
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.graphics.Typeface
 import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
+import android.util.Log
+import android.text.TextUtils
 import android.text.format.Formatter
+import android.view.Gravity
 import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.AccelerateInterpolator
+import android.view.animation.LinearInterpolator
 import android.view.animation.OvershootInterpolator
 import android.view.inputmethod.EditorInfo
 import android.widget.Button
+import android.widget.EditText
+import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.PopupMenu
 import android.widget.PopupWindow
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.core.widget.addTextChangedListener
@@ -49,6 +61,7 @@ import com.limpe.tengerium.util.ChatHistoryExporter
 import com.limpe.tengerium.util.FormattingUtils
 import com.limpe.tengerium.util.SoundUtils
 import com.limpe.tengerium.util.VibrationHelper
+import com.limpe.tengerium.util.WinkSoundPlayer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
@@ -89,6 +102,34 @@ class ChatFragment : Fragment() {
         if (uri != null) sendSelectedFile(uri)
     }
 
+    private val sendPhotoLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) sendSelectedFile(uri)
+    }
+
+    private var pendingCustomEmoticonCode: String? = null
+
+    private val customEmoticonLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        val code = pendingCustomEmoticonCode
+        pendingCustomEmoticonCode = null
+        val appContext = context?.applicationContext
+        if (uri == null || code == null || appContext == null) return@registerForActivityResult
+        viewLifecycleOwner.lifecycleScope.launch {
+            val error = withContext(Dispatchers.IO) { CustomEmoticons.add(appContext, code, uri) }
+            if (!isAdded) return@launch
+            if (error == null) {
+                Toast.makeText(appContext, getString(R.string.custom_emoticon_added, code), Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(appContext, error, Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    private val recordAudioPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (!isAdded) return@registerForActivityResult
+        if (granted) showVoiceClipDialog()
+        else Toast.makeText(requireContext(), R.string.voice_clip_permission_needed, Toast.LENGTH_LONG).show()
+    }
+
     private val saveIncomingFileLauncher = registerForActivityResult(ActivityResultContracts.CreateDocument("*/*")) { uri ->
         val transfer = pendingIncomingTransfer
         pendingIncomingTransfer = null
@@ -99,6 +140,7 @@ class ChatFragment : Fragment() {
     }
 
     private var pendingIncomingTransfer: IncomingFileTransfer? = null
+    private var activeVoiceClipDialog: VoiceClipDialog? = null
     private val shownIncomingTransferIds = mutableSetOf<String>()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -111,6 +153,9 @@ class ChatFragment : Fragment() {
         repository = (requireActivity().application as TengeriumApp).repository
         securePrefs = SecurePrefs(requireContext())
         contactAccount = arguments?.getString("account")
+        contactAccount?.let { account ->
+            ConversationTabs.open(account, account.substringBefore('@'))
+        }
 
         setupUI()
         observeData()
@@ -139,8 +184,14 @@ class ChatFragment : Fragment() {
 
         // MSN Title bar window controls
         binding.btnWindowClose.setOnClickListener { performBackNavigation() }
-        binding.btnWindowMinimize.setOnClickListener { performBackNavigation() }
-        binding.btnWindowMaximize.setOnClickListener { performBackNavigation() }
+        binding.btnWindowMinimize.setOnClickListener { performBackNavigation(closeTab = false) }
+        binding.btnWindowMaximize.setOnClickListener { performBackNavigation(closeTab = false) }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                ConversationTabs.tabs.collectLatest { tabs -> renderChatTabs(tabs) }
+            }
+        }
 
         // MSN Menu bar items
         binding.btnMenuFile.setOnClickListener { startExport() }
@@ -167,9 +218,9 @@ class ChatFragment : Fragment() {
                 runCatching { findNavController().navigate(R.id.action_ChatFragment_to_InviteParticipantsFragment, bundle) }
             }
         }
-        binding.btnActionSendFile.setOnClickListener { chooseFileToSend() }
+        binding.btnActionSendFile.setOnClickListener { showAttachMenu(it) }
         binding.btnActionVideo.setOnClickListener { showUnavailable() }
-        binding.btnActionVoice.setOnClickListener { showUnavailable() }
+        binding.btnActionVoice.setOnClickListener { openVoiceClip() }
         binding.btnActionActivities.setOnClickListener { showUnavailable() }
         binding.btnActionGames.setOnClickListener {
             val parent = findMainFragment()
@@ -183,13 +234,13 @@ class ChatFragment : Fragment() {
         // Formatting Bar items
         binding.btnFormatEmoticon.setOnClickListener { showEmoticonPicker(it) }
         binding.btnFormatGift.setOnClickListener { showUnavailable() }
-        binding.btnTabInk.setOnClickListener { showUnavailable() }
+        binding.btnTabInk.setOnClickListener { openInkDialog() }
         binding.btnTabText.setOnClickListener {
             binding.etMessage.requestFocus()
             val imm = requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
             imm?.showSoftInput(binding.etMessage, 0)
         }
-        binding.btnFormatVoiceClip.setOnClickListener { chooseFileToSend() }
+        binding.btnFormatVoiceClip.setOnClickListener { openVoiceClip() }
         binding.btnFormatWink.setOnClickListener { showWinkPicker() }
         binding.btnFormatNudge.setOnClickListener { sendNudge() }
         binding.btnFormatFont.setOnClickListener { showFontFormattingMenu() }
@@ -223,7 +274,7 @@ class ChatFragment : Fragment() {
 
         binding.layoutChatHeader.setOnClickListener { openProfile() }
 
-        binding.btnAttach.setOnClickListener { chooseFileToSend() }
+        binding.btnAttach.setOnClickListener { showAttachMenu(it) }
         binding.btnSend.setOnClickListener { sendMessage() }
         
         updateSendState()
@@ -254,7 +305,19 @@ class ChatFragment : Fragment() {
         }
 
         binding.etMessage.setOnKeyListener { _, keyCode, event ->
-            if (securePrefs.sendByEnter && keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN) {
+            if (keyCode == KeyEvent.KEYCODE_F2) {
+                when (event.action) {
+                    KeyEvent.ACTION_DOWN -> {
+                        if (event.repeatCount == 0 && activeVoiceClipDialog == null) openVoiceClip(holdToRecord = true)
+                        true
+                    }
+                    KeyEvent.ACTION_UP -> {
+                        activeVoiceClipDialog?.endRecording()
+                        true
+                    }
+                    else -> true
+                }
+            } else if (securePrefs.sendByEnter && keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN) {
                 sendMessage()
                 true
             } else {
@@ -393,13 +456,102 @@ class ChatFragment : Fragment() {
         }
     }
 
-    private fun performBackNavigation() {
+    private fun performBackNavigation(closeTab: Boolean = true) {
+        if (closeTab) {
+            val key = ConversationTabs.normalize(contactAccount ?: "")
+            val tabs = ConversationTabs.tabs.value
+            val index = tabs.indexOfFirst { it.account == key }
+            if (index >= 0) {
+                val remaining = ConversationTabs.close(key)
+                if (remaining.isNotEmpty()) {
+                    switchToTab(remaining[index.coerceIn(0, remaining.size - 1)].account)
+                    return
+                }
+            }
+        }
         val mainFragment = findMainFragment()
         if (mainFragment != null) {
             mainFragment.closeDetail()
         } else {
             findNavController().popBackStack()
         }
+    }
+
+    // ---- tabbed conversations -----------------------------------------------------------
+
+    private fun renderChatTabs(tabs: List<ConversationTabs.Tab>) {
+        val b = _binding ?: return
+        b.scrollChatTabs.isVisible = tabs.size > 1
+        if (tabs.size <= 1) {
+            b.layoutChatTabs.removeAllViews()
+            return
+        }
+        val density = resources.displayMetrics.density
+        val currentKey = ConversationTabs.normalize(contactAccount ?: "")
+        b.layoutChatTabs.removeAllViews()
+        tabs.forEach { tab ->
+            val active = tab.account == currentKey
+            val row = LinearLayout(requireContext()).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                setPadding((9 * density).toInt(), 0, (2 * density).toInt(), 0)
+                setBackgroundResource(if (active) R.drawable.bg_chat_tab_active else R.drawable.bg_chat_tab)
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.MATCH_PARENT
+                ).apply { marginEnd = (3 * density).toInt() }
+                setOnClickListener { switchToTab(tab.account) }
+            }
+            row.addView(TextView(requireContext()).apply {
+                text = FormattingUtils.formatBBCode(tab.title).toString()
+                textSize = 11f
+                maxLines = 1
+                ellipsize = TextUtils.TruncateAt.END
+                maxWidth = (140 * density).toInt()
+                setTextColor(if (active) 0xFF0A2A66.toInt() else 0xFF31527F.toInt())
+                setTypeface(typeface, if (active) Typeface.BOLD else Typeface.NORMAL)
+            })
+            row.addView(TextView(requireContext()).apply {
+                text = "×"
+                textSize = 14f
+                gravity = Gravity.CENTER
+                setTextColor(0xFF31527F.toInt())
+                setPadding((7 * density).toInt(), 0, (5 * density).toInt(), (1 * density).toInt())
+                contentDescription = getString(R.string.close_conversation_tab, tab.title)
+                setOnClickListener { closeTab(tab.account) }
+            })
+            b.layoutChatTabs.addView(row)
+        }
+    }
+
+    private fun switchToTab(account: String) {
+        val key = ConversationTabs.normalize(account)
+        if (key == ConversationTabs.normalize(contactAccount ?: "")) return
+        val parent = findMainFragment()
+        if (parent != null) {
+            parent.openChatOnTablet(key)
+        } else {
+            runCatching {
+                findNavController().navigate(
+                    R.id.action_MainFragment_to_ChatFragment,
+                    bundleOf("account" to key)
+                )
+            }
+        }
+    }
+
+    private fun closeTab(account: String) {
+        val key = ConversationTabs.normalize(account)
+        val currentKey = ConversationTabs.normalize(contactAccount ?: "")
+        val tabs = ConversationTabs.tabs.value
+        val index = tabs.indexOfFirst { it.account == key }
+        val remaining = ConversationTabs.close(key)
+        if (key != currentKey) return
+        if (remaining.isEmpty()) {
+            performBackNavigation(closeTab = false)
+            return
+        }
+        switchToTab(remaining[index.coerceIn(0, remaining.size - 1)].account)
     }
 
     private fun findMainFragment(): MainFragment? {
@@ -483,7 +635,47 @@ class ChatFragment : Fragment() {
     private fun playWink(wink: Wink) {
         val overlay = _binding?.winkOverlay ?: return
         overlay.play(wink)
-        if (securePrefs.chatSoundsEnabled) SoundUtils.playSound(requireContext(), R.raw.wink)
+        if (wink.id == WinkCatalog.KNOCK) shakeWindowForKnock()
+        if (securePrefs.chatSoundsEnabled) {
+            // Classic winks each have their own effect; retired winks use the old chime.
+            if (!WinkSoundPlayer.play(requireContext(), wink.id)) {
+                SoundUtils.playSound(requireContext(), R.raw.wink)
+            }
+        }
+    }
+
+    private var knockShakeAnimator: ValueAnimator? = null
+
+    /** Physically shakes the chat window in step with the four knocks. */
+    private fun shakeWindowForKnock() {
+        val root = _binding?.swipeBackLayout ?: return
+        knockShakeAnimator?.cancel()
+        val amplitude = 9f * resources.displayMetrics.density
+        val bangs = floatArrayOf(0.05f, 0.29f, 0.53f, 0.77f)
+        knockShakeAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = 2400
+            interpolator = LinearInterpolator()
+            addUpdateListener { animator ->
+                val t = animator.animatedValue as Float
+                var offset = 0f
+                for (bang in bangs) {
+                    val local = t - bang
+                    if (local >= 0f && local < 0.16f) {
+                        val falloff = 1f - local / 0.16f
+                        offset += kotlin.math.sin(local * 190f) * amplitude * falloff * falloff
+                    }
+                }
+                root.translationX = offset
+                root.translationY = offset * 0.3f
+            }
+            addListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    root.translationX = 0f
+                    root.translationY = 0f
+                }
+            })
+            start()
+        }
     }
 
     // ---- misc menus / pickers -----------------------------------------------------------
@@ -542,10 +734,10 @@ class ChatFragment : Fragment() {
         }
         lateinit var popup: PopupWindow
         Emoticons.all.forEach { e ->
-            val iv = android.widget.ImageView(ctx).apply {
+            val iv = ImageView(ctx).apply {
                 setImageResource(e.drawable)
                 contentDescription = e.code
-                scaleType = android.widget.ImageView.ScaleType.CENTER_INSIDE
+                scaleType = ImageView.ScaleType.CENTER_INSIDE
                 setPadding((cell - icon) / 2, (cell - icon) / 2, (cell - icon) / 2, (cell - icon) / 2)
                 layoutParams = android.widget.GridLayout.LayoutParams().apply {
                     width = cell
@@ -558,13 +750,238 @@ class ChatFragment : Fragment() {
             }
             grid.addView(iv)
         }
+
+        CustomEmoticons.entries(ctx).forEach { entry ->
+            val iv = ImageView(ctx).apply {
+                val preview = CustomEmoticons.preview(ctx, entry, icon)
+                if (preview != null) setImageDrawable(preview) else setImageResource(R.drawable.emo_smile)
+                contentDescription = entry.code
+                scaleType = ImageView.ScaleType.CENTER_INSIDE
+                setPadding((cell - icon) / 2, (cell - icon) / 2, (cell - icon) / 2, (cell - icon) / 2)
+                layoutParams = android.widget.GridLayout.LayoutParams().apply {
+                    width = cell
+                    height = cell
+                }
+                setOnClickListener {
+                    insertEmoticon(entry.code)
+                    popup.dismiss()
+                }
+                setOnLongClickListener {
+                    popup.dismiss()
+                    confirmRemoveCustomEmoticon(entry)
+                    true
+                }
+            }
+            grid.addView(iv)
+        }
+
+        grid.addView(TextView(ctx).apply {
+            text = "+"
+            textSize = 20f
+            gravity = Gravity.CENTER
+            setTextColor(0xFF2C598A.toInt())
+            setTypeface(typeface, Typeface.BOLD)
+            background = ContextCompat.getDrawable(ctx, R.drawable.bg_wink_item)
+            contentDescription = getString(R.string.add_custom_emoticon)
+            layoutParams = android.widget.GridLayout.LayoutParams().apply {
+                width = cell
+                height = cell
+            }
+            setOnClickListener {
+                popup.dismiss()
+                showAddCustomEmoticonDialog()
+            }
+        })
+
         popup = PopupWindow(grid, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, true).apply {
-            setBackgroundDrawable(androidx.core.content.ContextCompat.getDrawable(ctx, R.drawable.bg_msn_history_frame))
+            setBackgroundDrawable(ContextCompat.getDrawable(ctx, R.drawable.bg_msn_history_frame))
             elevation = 8f * density
             isOutsideTouchable = true
         }
         grid.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
         popup.showAsDropDown(anchor, 0, -(anchor.height + grid.measuredHeight))
+    }
+
+    // ---- custom emoticons -------------------------------------------------------------
+
+    private fun showAddCustomEmoticonDialog() {
+        val ctx = requireContext()
+        val input = EditText(ctx).apply {
+            hint = getString(R.string.custom_emoticon_hint)
+            setSingleLine()
+            setText(":")
+            setSelection(1)
+        }
+        val dialog = AlertDialog.Builder(ctx)
+            .setTitle(R.string.add_custom_emoticon)
+            .setMessage(R.string.custom_emoticon_message)
+            .setView(input)
+            .setPositiveButton(R.string.next, null)
+            .setNegativeButton(android.R.string.cancel, null)
+            .create()
+        dialog.setOnShowListener {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val code = input.text.toString().trim()
+                input.error = when {
+                    code.length < 2 || code.length > 24 || code.any { it.isWhitespace() } || code.any { it in "[]{}<>" } ->
+                        getString(R.string.custom_emoticon_invalid)
+                    !CustomEmoticons.isCodeAvailable(ctx, code) ->
+                        getString(R.string.custom_emoticon_duplicate)
+                    else -> null
+                }
+                if (input.error != null) return@setOnClickListener
+                pendingCustomEmoticonCode = code
+                dialog.dismiss()
+                customEmoticonLauncher.launch(arrayOf("image/*"))
+            }
+        }
+        dialog.show()
+    }
+
+    private fun confirmRemoveCustomEmoticon(entry: CustomEmoticons.Entry) {
+        AlertDialog.Builder(requireContext())
+            .setTitle(getString(R.string.remove_custom_emoticon, entry.code))
+            .setPositiveButton(R.string.remove) { _, _ ->
+                CustomEmoticons.remove(requireContext(), entry.code)
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    // ---- voice clips / handwriting / photos ---------------------------------------------
+
+    private fun showAttachMenu(anchor: View) {
+        val popup = PopupMenu(requireContext(), anchor)
+        popup.menu.add(0, 1, 0, R.string.send_photo)
+        popup.menu.add(0, 2, 1, R.string.send_file)
+        popup.menu.add(0, 3, 2, R.string.voice_clip)
+        popup.menu.add(0, 4, 3, R.string.handwriting)
+        popup.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                1 -> choosePhotoToSend()
+                2 -> chooseFileToSend()
+                3 -> openVoiceClip()
+                4 -> openInkDialog()
+            }
+            true
+        }
+        popup.show()
+    }
+
+    private fun choosePhotoToSend() {
+        val target = contactAccount ?: return
+        if (!target.contains('@')) {
+            Toast.makeText(requireContext(), R.string.file_transfer_one_to_one_only, Toast.LENGTH_LONG).show()
+            return
+        }
+        sendPhotoLauncher.launch(arrayOf("image/*"))
+    }
+
+    private fun openVoiceClip(holdToRecord: Boolean = false) {
+        val target = contactAccount ?: return
+        if (!target.contains('@')) {
+            Toast.makeText(requireContext(), R.string.file_transfer_one_to_one_only, Toast.LENGTH_LONG).show()
+            return
+        }
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+            showVoiceClipDialog(holdToRecord)
+        } else {
+            recordAudioPermission.launch(Manifest.permission.RECORD_AUDIO)
+        }
+    }
+
+    private fun showVoiceClipDialog(holdToRecord: Boolean = false) {
+        if (!isAdded) return
+        activeVoiceClipDialog = VoiceClipDialog(requireContext()) { clip ->
+            activeVoiceClipDialog = null
+            sendGeneratedFile(clip, "Voice-Clip-${fileStamp()}.m4a")
+        }.also { dialog ->
+            dialog.setOnDismissListener { if (activeVoiceClipDialog === dialog) activeVoiceClipDialog = null }
+            dialog.show()
+            if (holdToRecord) dialog.beginRecording()
+        }
+    }
+
+    private fun openInkDialog() {
+        val target = contactAccount ?: return
+        if (!target.contains('@')) {
+            Toast.makeText(requireContext(), R.string.file_transfer_one_to_one_only, Toast.LENGTH_LONG).show()
+            return
+        }
+        InkDialog(requireContext()) { drawing ->
+            sendInk(drawing)
+        }.show()
+    }
+
+    /** Publishes a drawing as an inline message with embedded payload. */
+    private fun sendInk(file: File) {
+        val target = contactAccount
+        val appContext = context?.applicationContext
+        if (target == null || appContext == null || !target.contains('@')) {
+            file.delete()
+            return
+        }
+        val id = InkStore.newId()
+        val stored = InkStore.storeFile(appContext, id, file)
+        file.delete()
+        if (stored == null) {
+            Toast.makeText(appContext, R.string.handwriting_send_failed, Toast.LENGTH_LONG).show()
+            return
+        }
+
+        // Send the marker with inline image payload for 100% reliable instant delivery
+        val markerText = InkStore.marker(id, stored)
+        repository.sendMessage(target, markerText)
+        
+        // Also send the actual file via P2P for compatibility and proper storage on the recipient's side
+        lifecycleScope.launch {
+            withContext(Dispatchers.IO) {
+                repository.sendFile(target, InkStore.fileName(id), stored)
+            }
+        }
+    }
+
+    private fun fileStamp(): String =
+        java.text.SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US).format(Date())
+
+    private fun sendGeneratedFile(file: File, displayName: String) {
+        val target = contactAccount
+        val appContext = context?.applicationContext
+        if (target == null || appContext == null) {
+            file.delete()
+            return
+        }
+        if (file.length() == 0L) {
+            file.delete()
+            return
+        }
+        if (file.length() > FileTransferLimits.MAX_FILE_SIZE_BYTES) {
+            file.delete()
+            Toast.makeText(appContext, R.string.file_transfer_too_large, Toast.LENGTH_LONG).show()
+            return
+        }
+        val progress = AlertDialog.Builder(requireContext())
+            .setMessage(R.string.sending_file)
+            .setCancelable(false)
+            .create()
+        progress.show()
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                withContext(Dispatchers.IO) { repository.sendFile(target, displayName, file) }
+                if (isAdded) Toast.makeText(appContext, R.string.file_sent, Toast.LENGTH_SHORT).show()
+            } catch (error: Exception) {
+                if (isAdded) {
+                    Toast.makeText(
+                        appContext,
+                        getString(R.string.file_send_failed, error.message ?: error.javaClass.simpleName),
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            } finally {
+                file.delete()
+                progress.dismiss()
+            }
+        }
     }
 
     private fun showWinkPicker() {
@@ -902,6 +1319,25 @@ class ChatFragment : Fragment() {
         builder.show()
     }
 
+    /** Drawings are accepted silently and shown inline, never offered as a save-to-device file. */
+    private fun receiveInkTransfer(transfer: IncomingFileTransfer, inkId: String) {
+        val appContext = context?.applicationContext ?: return
+        if (transfer.fileSize > 4UL * 1024UL * 1024UL) {
+            viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+                runCatching { repository.declineIncomingFileTransfer(transfer) }
+            }
+            return
+        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val bytes = withContext(Dispatchers.IO) { repository.acceptIncomingFileTransfer(transfer) }
+                withContext(Dispatchers.IO) { InkStore.storeBytes(appContext, inkId, bytes) }
+            } catch (_: Exception) {
+                // A failed drawing transfer should not interrupt the conversation.
+            }
+        }
+    }
+
     private fun declineIncomingFile(transfer: IncomingFileTransfer) {
         viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
             runCatching { repository.declineIncomingFileTransfer(transfer) }
@@ -998,9 +1434,21 @@ class ChatFragment : Fragment() {
                                     it.id !in shownIncomingTransferIds
                             }
                             if (transfer != null && isAdded) {
-                                shownIncomingTransferIds.add(transfer.id)
-                                showIncomingFileRequest(transfer)
+                                val inkId = InkStore.idFromFileName(transfer.fileName)
+                                if (inkId != null) {
+                                    shownIncomingTransferIds.add(transfer.id)
+                                    receiveInkTransfer(transfer, inkId)
+                                } else {
+                                    shownIncomingTransferIds.add(transfer.id)
+                                    showIncomingFileRequest(transfer)
+                                }
                             }
+                        }
+                    }
+
+                    launch {
+                        InkStore.revision.collectLatest {
+                            _binding?.rvMessages?.adapter?.notifyDataSetChanged()
                         }
                     }
 
@@ -1011,6 +1459,7 @@ class ChatFragment : Fragment() {
                             val formattedName = FormattingUtils.formatBBCode(contactDisplayName)
                             binding.tvChatName.text = formattedName
                             binding.tvWindowTitle.text = "$formattedName - Conversation"
+                            ConversationTabs.updateTitle(account, contact?.nickname ?: account)
                             binding.avatarStatusView.setAvatar(contact?.avatarUrl, account)
                             
                             val status = contact?.status ?: MSNPProto.Status.OFFLINE
@@ -1121,7 +1570,12 @@ class ChatFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        activeVoiceClipDialog?.dismiss()
+        activeVoiceClipDialog = null
         super.onDestroyView()
+        knockShakeAnimator?.cancel()
+        knockShakeAnimator = null
+        WinkSoundPlayer.stop()
         mainViewModel.setActiveChat(null)
         typingJob?.cancel()
         _binding?.tvTypingIndicator?.animate()?.cancel()
