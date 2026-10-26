@@ -57,6 +57,9 @@ class ChatAdapter(
 
     private var securePrefs: SecurePrefs? = null
 
+    /** Called when the user taps a wink card, so the animation can be replayed. */
+    var onWinkClick: ((Wink) -> Unit)? = null
+
     companion object {
         private const val VIEW_TYPE_MESSAGE = 0
         private const val VIEW_TYPE_SYSTEM = 1
@@ -118,7 +121,7 @@ class ChatAdapter(
             }
             VIEW_TYPE_WINK -> {
                 val binding = ItemWinkBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-                WinkViewHolder(binding)
+                WinkViewHolder(binding) { wink -> onWinkClick?.invoke(wink) }
             }
             else -> {
                 val binding = ItemMessageBinding.inflate(LayoutInflater.from(parent.context), parent, false)
@@ -171,7 +174,12 @@ class ChatAdapter(
             val decryptedText = SafeStorage.decryptText(message.encryptedText)
             val context = itemView.context
 
-            binding.tvMessageBody.text = FormattingUtils.formatBBCode(decryptedText)
+            val colorSplit = com.limpe.tengerium.util.MsnTextFormat.splitColor(decryptedText)
+            binding.tvMessageBody.text = Emoticons.apply(
+                context,
+                FormattingUtils.formatBBCode(colorSplit.text),
+                binding.tvMessageBody.textSize
+            )
             binding.tvTimestamp.text = timeFormat.format(Date(message.timestamp))
             
             Linkify.addLinks(binding.tvMessageBody, Linkify.WEB_URLS)
@@ -206,6 +214,20 @@ class ChatAdapter(
                 message.isIncoming,
                 securePrefs
             )
+
+            // Sender's font colour, only when it is readable on this bubble
+            colorSplit.color?.let { rgb ->
+                val fg = 0xFF000000.toInt() or rgb
+                val bg = binding.cardMessage.cardBackgroundColor.defaultColor or 0xFF000000.toInt()
+                if (androidx.core.graphics.ColorUtils.calculateContrast(fg, bg) >= 3.0) {
+                    val colored = android.text.SpannableStringBuilder(binding.tvMessageBody.text)
+                    colored.setSpan(
+                        android.text.style.ForegroundColorSpan(fg),
+                        0, colored.length, android.text.Spanned.SPAN_INCLUSIVE_INCLUSIVE
+                    )
+                    binding.tvMessageBody.text = colored
+                }
+            }
 
             binding.pbSending.visibility = if (!message.isIncoming && !message.isSent && message.error == null) View.VISIBLE else View.GONE
             binding.tvError.visibility = if (message.error != null) android.view.View.VISIBLE else android.view.View.GONE
@@ -287,12 +309,16 @@ class ChatAdapter(
         }
     }
 
-    class WinkViewHolder(private val binding: ItemWinkBinding) : RecyclerView.ViewHolder(binding.root) {
+    class WinkViewHolder(
+        private val binding: ItemWinkBinding,
+        private val onClick: (Wink) -> Unit
+    ) : RecyclerView.ViewHolder(binding.root) {
         fun bind(message: MessageEntity) {
             val wink = WinkCatalog.fromMessage(SafeStorage.decryptText(message.encryptedText))
                 ?: WinkCatalog.fallback
             binding.tvWinkEmoji.text = wink.emoji
             binding.tvWinkName.text = wink.name
+            binding.cardWink.setOnClickListener { onClick(wink) }
             binding.tvWinkCaption.text = itemView.context.getString(
                 if (message.isIncoming) R.string.wink_received else R.string.wink_sent
             )
@@ -369,3 +395,5 @@ class ChatAdapter(
         }
     }
 }
+
+

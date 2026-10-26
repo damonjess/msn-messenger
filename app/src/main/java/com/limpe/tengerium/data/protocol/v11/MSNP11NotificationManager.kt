@@ -149,7 +149,13 @@ class MSNP11NotificationManager(
                 is Event.SessionAnswered -> handleIncomingSession(event.v1)
 
                 is Event.TextMessage -> {
-                    scope.safeLaunch(TAG) { listener.onMessageReceived(event.email, event.email, event.email, event.message.text) }
+                    scope.safeLaunch(TAG) { listener.onMessageReceived(
+                        event.email, event.email, event.email,
+                        com.limpe.tengerium.util.MsnTextFormat.fromWire(
+                            event.message.text, event.message.bold, event.message.italic, event.message.underline,
+                            event.message.color
+                        )
+                    ) }
                 }
 
                 is Event.Nudge -> {
@@ -236,7 +242,7 @@ class MSNP11NotificationManager(
         heartbeatJob?.cancel()
         heartbeatJob = scope.launch {
             while (isActive) {
-                delay(45000L) // Ping every 45 seconds to keep TCP socket active
+                delay(240_000L) // The SDK already pings the server; this only nudges the socket every 4 minutes
                 try {
                     val client = rustClient
                     if (client != null && currentStatus != "FLN") {
@@ -512,3 +518,5 @@ class MSNP11NotificationManager(
         }
     }
 }
+
+

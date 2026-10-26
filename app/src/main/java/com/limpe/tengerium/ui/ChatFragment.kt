@@ -49,7 +49,6 @@ import com.limpe.tengerium.util.ChatHistoryExporter
 import com.limpe.tengerium.util.FormattingUtils
 import com.limpe.tengerium.util.SoundUtils
 import com.limpe.tengerium.util.VibrationHelper
-import com.google.android.material.button.MaterialButton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
@@ -60,6 +59,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.*
+import com.limpe.tengerium.data.db.MessageEntity
+import com.limpe.tengerium.data.security.SafeStorage
 
 class ChatFragment : Fragment() {
 
@@ -127,6 +128,7 @@ class ChatFragment : Fragment() {
             stackFromEnd = true
         }
         binding.rvMessages.adapter = adapter
+        adapter.onWinkClick = { wink -> playWink(wink) }
         
         binding.swipeBackLayout.setOnSwipeBackListener {
             performBackNavigation()
@@ -144,7 +146,7 @@ class ChatFragment : Fragment() {
         binding.btnMenuFile.setOnClickListener { startExport() }
         binding.btnMenuEdit.setOnClickListener { showClearChatDialog() }
         binding.btnMenuActions.setOnClickListener { showCustomMenu(it) }
-        binding.btnMenuTools.setOnClickListener { showCustomMenu(it) }
+        binding.btnMenuTools.setOnClickListener { showToolsMenu(it) }
         binding.btnMenuHelp.setOnClickListener {
             val parent = findMainFragment()
             if (parent != null) {
@@ -166,13 +168,9 @@ class ChatFragment : Fragment() {
             }
         }
         binding.btnActionSendFile.setOnClickListener { chooseFileToSend() }
-        binding.btnActionVideo.setOnClickListener {
-            Toast.makeText(requireContext(), "Video feature selected", Toast.LENGTH_SHORT).show()
-        }
-        binding.btnActionVoice.setOnClickListener { chooseFileToSend() }
-        binding.btnActionActivities.setOnClickListener {
-            Toast.makeText(requireContext(), "Activities feature selected", Toast.LENGTH_SHORT).show()
-        }
+        binding.btnActionVideo.setOnClickListener { showUnavailable() }
+        binding.btnActionVoice.setOnClickListener { showUnavailable() }
+        binding.btnActionActivities.setOnClickListener { showUnavailable() }
         binding.btnActionGames.setOnClickListener {
             val parent = findMainFragment()
             if (parent != null) {
@@ -183,19 +181,19 @@ class ChatFragment : Fragment() {
         }
 
         // Formatting Bar items
-        binding.btnFormatEmoticon.setOnClickListener { binding.etMessage.append(" :-)") }
+        binding.btnFormatEmoticon.setOnClickListener { showEmoticonPicker(it) }
+        binding.btnFormatGift.setOnClickListener { showUnavailable() }
+        binding.btnTabInk.setOnClickListener { showUnavailable() }
+        binding.btnTabText.setOnClickListener {
+            binding.etMessage.requestFocus()
+            val imm = requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
+            imm?.showSoftInput(binding.etMessage, 0)
+        }
         binding.btnFormatVoiceClip.setOnClickListener { chooseFileToSend() }
         binding.btnFormatWink.setOnClickListener { showWinkPicker() }
         binding.btnFormatNudge.setOnClickListener { sendNudge() }
         binding.btnFormatFont.setOnClickListener { showFontFormattingMenu() }
-        binding.btnFormatBackground.setOnClickListener {
-            val parent = findMainFragment()
-            if (parent != null) {
-                parent.showDetail(ChatSettingsFragment(), addToBackStack = true)
-            } else {
-                runCatching { findNavController().navigate(R.id.ChatSettingsFragment) }
-            }
-        }
+        binding.btnFormatBackground.setOnClickListener { openChatSettings() }
 
         // Input & Avatars
         binding.cardContactAvatar.setOnClickListener { openProfile() }
@@ -228,26 +226,13 @@ class ChatFragment : Fragment() {
         binding.btnAttach.setOnClickListener { chooseFileToSend() }
         binding.btnSend.setOnClickListener { sendMessage() }
         
-        // Инициализация кнопки
-        binding.btnSend.post {
-            val btn = binding.btnSend as? MaterialButton
-            if (btn != null) {
-                AnimationHelper.animateSendButtonToggle(btn, false)
-            }
-        }
+        updateSendState()
 
-        var wasEmpty = true
         binding.etMessage.addTextChangedListener { s ->
-            val isEmpty = s.isNullOrBlank()
-            if (isEmpty != wasEmpty) {
-                val btn = binding.btnSend as? MaterialButton
-                if (btn != null) {
-                    AnimationHelper.animateSendButtonToggle(btn, !isEmpty)
-                }
-                wasEmpty = isEmpty
-            }
-            
-            if (!isEmpty) {
+            updateSendState()
+
+            // 7: don't send typing notifications for the "messaging unavailable" placeholder
+            if (!s.isNullOrBlank() && binding.etMessage.isEnabled) {
                 repository.sendTyping(contactAccount ?: "")
             }
         }
@@ -475,6 +460,113 @@ class ChatFragment : Fragment() {
         }
     }
 
+    // ---- winks: animation playback ------------------------------------------------------
+
+    private val seenMessageIds = HashSet<Long>()
+    private var winkSnapshotTaken = false
+
+    /** Plays the animation for winks that arrive (or are sent) while the chat is open. */
+    private fun playNewWinks(messages: List<MessageEntity>) {
+        val now = System.currentTimeMillis()
+        var latest: Wink? = null
+        for (m in messages) {
+            if (!seenMessageIds.add(m.id)) continue
+            if (!winkSnapshotTaken) continue            // history that was already there
+            if (now - m.timestamp > 60_000) continue    // stale
+            val wink = WinkCatalog.fromMessage(SafeStorage.decryptText(m.encryptedText)) ?: continue
+            latest = wink
+        }
+        winkSnapshotTaken = true
+        latest?.let { playWink(it) }
+    }
+
+    private fun playWink(wink: Wink) {
+        val overlay = _binding?.winkOverlay ?: return
+        overlay.play(wink)
+        if (securePrefs.chatSoundsEnabled) SoundUtils.playSound(requireContext(), R.raw.wink)
+    }
+
+    // ---- misc menus / pickers -----------------------------------------------------------
+
+    private fun showUnavailable() {
+        Toast.makeText(requireContext(), R.string.msn_unavailable, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun openChatSettings() {
+        val parent = findMainFragment()
+        if (parent != null) {
+            parent.showDetail(ChatSettingsFragment(), addToBackStack = true)
+        } else {
+            runCatching { findNavController().navigate(R.id.ChatSettingsFragment) }
+        }
+    }
+
+    private fun showToolsMenu(anchor: View) {
+        val account = contactAccount ?: return
+        val normalized = account.lowercase(Locale.ROOT).trim()
+        val muted = securePrefs.isChatMuted(normalized)
+        val popup = PopupMenu(requireContext(), anchor)
+        popup.menu.add(0, 1, 0, if (muted) R.string.unmute_notifications else R.string.mute_notifications)
+        popup.menu.add(0, 2, 1, R.string.chat_settings)
+        popup.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                1 -> securePrefs.toggleMuteChat(normalized)
+                2 -> openChatSettings()
+            }
+            true
+        }
+        popup.show()
+    }
+
+    /** Inserts an emoticon code at the cursor, spaced so it is recognised as an emoticon. */
+    private fun insertEmoticon(code: String) {
+        val et = _binding?.etMessage ?: return
+        if (!et.isEnabled) return
+        val text = et.text ?: return
+        val start = maxOf(0, minOf(et.selectionStart, et.selectionEnd))
+        val end = maxOf(et.selectionStart, et.selectionEnd).coerceAtLeast(start)
+        val before = if (start > 0) text[start - 1] else null
+        val prefix = if (before != null && !before.isWhitespace()) " " else ""
+        text.replace(start, end, "$prefix$code ")
+    }
+
+    private fun showEmoticonPicker(anchor: View) {
+        val ctx = requireContext()
+        val density = resources.displayMetrics.density
+        val pad = (6 * density).toInt()
+        val cell = (44 * density).toInt()
+        val icon = (28 * density).toInt()
+        val grid = android.widget.GridLayout(ctx).apply {
+            columnCount = 6
+            setPadding(pad, pad, pad, pad)
+        }
+        lateinit var popup: PopupWindow
+        Emoticons.all.forEach { e ->
+            val iv = android.widget.ImageView(ctx).apply {
+                setImageResource(e.drawable)
+                contentDescription = e.code
+                scaleType = android.widget.ImageView.ScaleType.CENTER_INSIDE
+                setPadding((cell - icon) / 2, (cell - icon) / 2, (cell - icon) / 2, (cell - icon) / 2)
+                layoutParams = android.widget.GridLayout.LayoutParams().apply {
+                    width = cell
+                    height = cell
+                }
+                setOnClickListener {
+                    insertEmoticon(e.code)
+                    popup.dismiss()
+                }
+            }
+            grid.addView(iv)
+        }
+        popup = PopupWindow(grid, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, true).apply {
+            setBackgroundDrawable(androidx.core.content.ContextCompat.getDrawable(ctx, R.drawable.bg_msn_history_frame))
+            elevation = 8f * density
+            isOutsideTouchable = true
+        }
+        grid.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
+        popup.showAsDropDown(anchor, 0, -(anchor.height + grid.measuredHeight))
+    }
+
     private fun showWinkPicker() {
         val account = contactAccount ?: return
         WinkPickerDialog(requireContext()) { wink ->
@@ -497,15 +589,64 @@ class ChatFragment : Fragment() {
             isCheckable = true
             isChecked = isStyleActive("u")
         }
+        popup.menu.add(0, 4, 3, R.string.format_color).isCheckable = false
         popup.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 1 -> toggleStyle("b")
                 2 -> toggleStyle("i")
                 3 -> toggleStyle("u")
+                4 -> showColorPicker()
             }
             true
         }
         popup.show()
+    }
+
+    private val textColors = intArrayOf(
+        0x000000, 0xC62828, 0xE65100, 0xF9A825, 0x2E7D32, 0x00838F,
+        0x1565C0, 0x4527A0, 0x6A1B9A, 0xAD1457, 0x5D4037, 0x616161
+    )
+
+    /** Colour used for every message you send (also sent to the other person's client). */
+    private fun showColorPicker() {
+        val ctx = requireContext()
+        val density = resources.displayMetrics.density
+        val cell = (44 * density).toInt()
+        val margin = (6 * density).toInt()
+        val grid = android.widget.GridLayout(ctx).apply {
+            columnCount = 4
+            setPadding(margin * 2, margin * 2, margin * 2, margin * 2)
+        }
+        lateinit var dialog: AlertDialog
+        val current = securePrefs.messageColor and 0xFFFFFF
+        textColors.forEach { rgb ->
+            val swatch = View(ctx).apply {
+                background = android.graphics.drawable.GradientDrawable().apply {
+                    shape = android.graphics.drawable.GradientDrawable.OVAL
+                    setColor(0xFF000000.toInt() or rgb)
+                    setStroke(
+                        (if (rgb == current) 4 else 1) * density.toInt().coerceAtLeast(1),
+                        if (rgb == current) 0xFF316AC5.toInt() else 0x55000000
+                    )
+                }
+                layoutParams = android.widget.GridLayout.LayoutParams().apply {
+                    width = cell
+                    height = cell
+                    setMargins(margin, margin, margin, margin)
+                }
+                setOnClickListener {
+                    securePrefs.messageColor = rgb
+                    dialog.dismiss()
+                }
+            }
+            grid.addView(swatch)
+        }
+        dialog = AlertDialog.Builder(ctx)
+            .setTitle(R.string.format_color)
+            .setView(grid)
+            .setNegativeButton(android.R.string.cancel, null)
+            .create()
+        dialog.show()
     }
 
     private fun isStyleActive(tag: String): Boolean {
@@ -806,19 +947,25 @@ class ChatFragment : Fragment() {
 
     private class FileTooLargeException : Exception()
 
+    // Send is only active when there is text to send and the input is enabled.
+    private fun updateSendState() {
+        val b = _binding ?: return
+        val canSend = b.etMessage.isEnabled && !b.etMessage.text.isNullOrBlank()
+        b.btnSend.isEnabled = canSend
+        b.btnSend.alpha = if (canSend) 1f else 0.5f
+    }
+
     private fun sendMessage() {
+        if (!binding.etMessage.isEnabled) return
         val text = binding.etMessage.text.toString().trim()
-        if (text.isNotEmpty() && contactAccount != null) {
-            val btn = binding.btnSend as? MaterialButton
-            if (btn != null) {
-                AnimationHelper.animateSendAction(btn) {
-                    repository.sendMessage(contactAccount!!, text)
-                    binding.etMessage.text.clear()
-                }
-            } else {
-                repository.sendMessage(contactAccount!!, text)
-                binding.etMessage.text.clear()
-            }
+        val account = contactAccount
+        if (text.isNotEmpty() && account != null) {
+            repository.sendMessage(
+                account,
+                com.limpe.tengerium.util.MsnTextFormat.withColor(text, securePrefs.messageColor)
+            )
+            binding.etMessage.text.clear()
+            updateSendState()
         }
     }
 
@@ -839,6 +986,7 @@ class ChatFragment : Fragment() {
                                     binding.rvMessages.scrollToPosition(adapter.itemCount - 1)
                                 }
                             }
+                            playNewWinks(messages)
                         }
                     }
 
@@ -875,7 +1023,6 @@ class ChatFragment : Fragment() {
                                 val isOffline = status == MSNPProto.Status.OFFLINE || status == "FLN"
                                 if (isOffline) {
                                     binding.etMessage.isEnabled = false
-                                    binding.btnSend.isEnabled = false
                                     binding.etMessage.setText(R.string.messaging_unavailable)
                                 } else {
                                     if (!binding.etMessage.isEnabled) {
@@ -883,6 +1030,7 @@ class ChatFragment : Fragment() {
                                         binding.etMessage.text.clear()
                                     }
                                 }
+                                updateSendState()
                             }
                         }
                     }
@@ -968,7 +1116,7 @@ class ChatFragment : Fragment() {
 
         // Initialize mute state
         contactAccount?.let { account ->
-            binding.ivChatMuted.visibility = if (securePrefs.isChatMuted(account)) View.GONE else View.GONE
+            binding.ivChatMuted.visibility = if (securePrefs.isChatMuted(account)) View.VISIBLE else View.GONE
         }
     }
 
@@ -980,3 +1128,5 @@ class ChatFragment : Fragment() {
         _binding = null
     }
 }
+
+

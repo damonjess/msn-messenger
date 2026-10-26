@@ -317,4 +317,22 @@
     <string name="easter_egg_source">Источник %1$s</string>
     <string name="whats_new_title">Что нового</string>
 
+    <string name="format_bold">Жирный</string>
+    <string name="format_italic">Курсив</string>
+    <string name="format_underline">Подчёркнутый</string>
+    <string name="winks_title">Подмигивания</string>
+    <string name="winks_select">Выберите подмигивание</string>
+    <string name="winks_select_hint">Выберите подмигивание из списка ниже и отправьте его контакту.</string>
+    <string name="winks_default">Стандартные подмигивания</string>
+    <string name="winks_selected">Выбранное подмигивание</string>
+    <string name="winks_view">ПРОСМОТР</string>
+    <string name="winks_submit">ОТПРАВИТЬ</string>
+    <string name="wink_sent">Вы отправили подмигивание</string>
+    <string name="wink_received">Отправил(а) вам подмигивание</string>
+    <string name="sign_in_required_status">Вы не в сети. Войдите, чтобы изменить статус.</string>
+    <string name="msn_unavailable">Эта функция пока недоступна.</string>
+    <string name="format_color">Цвет текста…</string>
+    <string name="msn_signed_in">только что вошёл(а) в сеть</string>
 </resources>
+
+

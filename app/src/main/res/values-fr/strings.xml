@@ -315,4 +315,22 @@
     <string name="easter_egg_source">Source %1$s</string>
     <string name="whats_new_title">Quoi de neuf</string>
 
+    <string name="format_bold">Gras</string>
+    <string name="format_italic">Italique</string>
+    <string name="format_underline">Souligné</string>
+    <string name="winks_title">Clins d’œil</string>
+    <string name="winks_select">Sélectionner un clin d’œil</string>
+    <string name="winks_select_hint">Sélectionnez un clin d’œil dans la liste ci-dessous et envoyez-le au contact.</string>
+    <string name="winks_default">Clins d’œil par défaut</string>
+    <string name="winks_selected">Clin d’œil sélectionné</string>
+    <string name="winks_view">APERÇU</string>
+    <string name="winks_submit">ENVOYER</string>
+    <string name="wink_sent">Vous avez envoyé un clin d’œil</string>
+    <string name="wink_received">Vous a envoyé un clin d’œil</string>
+    <string name="sign_in_required_status">Vous êtes hors ligne. Connectez-vous pour changer votre statut.</string>
+    <string name="msn_unavailable">Cette fonctionnalité n’est pas encore disponible.</string>
+    <string name="format_color">Couleur du texte…</string>
+    <string name="msn_signed_in">vient de se connecter</string>
 </resources>
+
+

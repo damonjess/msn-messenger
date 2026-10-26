@@ -35,6 +35,15 @@ class InviteParticipantsFragment : Fragment() {
         return binding.root
     }
 
+    // When opened from the detail pane this fragment is a child of MainFragment,
+    // so popping the NavController would not close it.
+    private fun close() {
+        var p = parentFragment
+        while (p != null && p !is MainFragment) p = p.parentFragment
+        val main = p as? MainFragment
+        if (main != null) main.closeDetail() else findNavController().popBackStack()
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -42,15 +51,13 @@ class InviteParticipantsFragment : Fragment() {
         val securePrefs = SecurePrefs(requireContext())
         val chatAccount = args.account
 
-        binding.toolbar.setNavigationOnClickListener {
-            findNavController().popBackStack()
-        }
+        binding.toolbar.setNavigationOnClickListener { close() }
 
         val adapter = ContactAdapter(
             securePrefs = securePrefs,
             onClick = { contact ->
                 repository.inviteContactToChat(chatAccount, contact.account)
-                findNavController().popBackStack()
+                close()
             },
             onLongClick = { _, _ -> },
             onRequestsClick = {},
@@ -82,3 +89,5 @@ class InviteParticipantsFragment : Fragment() {
         _binding = null
     }
 }
+
+

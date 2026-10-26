@@ -23,6 +23,7 @@ import com.limpe.tengerium.data.MSNPRepository
 import com.limpe.tengerium.data.protocol.MSNPService
 import com.limpe.tengerium.data.security.SecurePrefs
 import com.limpe.tengerium.databinding.ActivityMainBinding
+import com.limpe.tengerium.data.protocol.MSNPProto
 import com.limpe.tengerium.databinding.ViewInAppNotificationBinding
 import com.limpe.tengerium.ui.AvatarUtils
 import com.limpe.tengerium.ui.MainFragment
@@ -160,6 +161,12 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                 }
+            }
+        }
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                repository.contactSignIns.collectLatest { showSignInToast(repository, it) }
             }
         }
 
@@ -319,6 +326,39 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /** Classic "X has just signed in" alert: a chime plus a small banner. */
+    private fun showSignInToast(repository: MSNPRepository, event: MSNPRepository.ContactSignIn) {
+        if (!securePrefs.notifyLogin) return
+        if (securePrefs.isChatMuted(event.account.lowercase(Locale.ROOT).trim())) return
+        // Like the original: stay quiet while you are Busy or on the phone
+        val mine = repository.currentStatus
+        if (mine == MSNPProto.Status.BUSY || mine == MSNPProto.Status.PHONE) return
+
+        if (securePrefs.chatSoundsEnabled) SoundUtils.playSound(this, R.raw.signin)
+        // never replace a message banner that is currently showing
+        if (notificationJob?.isActive == true) return
+
+        notificationJob = lifecycleScope.launch {
+            val viewBinding = ViewInAppNotificationBinding.inflate(LayoutInflater.from(this@MainActivity), binding.notificationContainer, false)
+            viewBinding.tvNotificationName.text = FormattingUtils.formatBBCode(event.nickname)
+            viewBinding.tvNotificationMessage.text = getString(R.string.msn_signed_in)
+            val contact = repository.contacts.value.find { it.account.equals(event.account, ignoreCase = true) }
+            AvatarUtils.loadAvatar(viewBinding.ivNotificationAvatar, contact?.avatarUrl, event.account)
+            viewBinding.root.setOnClickListener {
+                navigateToChat(event.account)
+                binding.notificationContainer.removeView(viewBinding.root)
+                notificationJob?.cancel()
+            }
+            binding.notificationContainer.removeAllViews()
+            binding.notificationContainer.addView(viewBinding.root)
+            AnimationHelper.animateNotificationIn(viewBinding.root)
+            delay(UiConstants.NOTIFICATION_DISPLAY_DELAY)
+            AnimationHelper.animateNotificationOut(viewBinding.root) {
+                binding.notificationContainer.removeView(viewBinding.root)
+            }
+        }
+    }
+
     private fun handleSessionExpired() {
         val navController = findNavController(R.id.nav_host_fragment_content_main)
         if (navController.currentDestination?.id != R.id.AuthFragment) {
@@ -335,6 +375,16 @@ class MainActivity : AppCompatActivity() {
         return false
     }
 
+    override fun onStart() {
+        super.onStart()
+        com.limpe.tengerium.util.AppForeground.visible = true
+    }
+
+    override fun onStop() {
+        com.limpe.tengerium.util.AppForeground.visible = false
+        super.onStop()
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         binding.root.viewTreeObserver.removeOnGlobalLayoutListener(onGlobalLayoutListener)
@@ -345,3 +395,5 @@ class MainActivity : AppCompatActivity() {
         return navController.navigateUp() || super.onSupportNavigateUp()
     }
 }
+
+

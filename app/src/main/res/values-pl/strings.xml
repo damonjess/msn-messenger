@@ -315,4 +315,22 @@
     <string name="easter_egg_source">Źródło %1$s</string>
     <string name="whats_new_title">Co nowego</string>
 
+    <string name="format_bold">Pogrubienie</string>
+    <string name="format_italic">Kursywa</string>
+    <string name="format_underline">Podkreślenie</string>
+    <string name="winks_title">Mrugnięcia</string>
+    <string name="winks_select">Wybierz mrugnięcie</string>
+    <string name="winks_select_hint">Wybierz mrugnięcie z poniższej listy i wyślij je kontaktowi.</string>
+    <string name="winks_default">Domyślne mrugnięcia</string>
+    <string name="winks_selected">Wybrane mrugnięcie</string>
+    <string name="winks_view">PODGLĄD</string>
+    <string name="winks_submit">WYŚLIJ</string>
+    <string name="wink_sent">Wysłano mrugnięcie</string>
+    <string name="wink_received">Wysłał(a) Ci mrugnięcie</string>
+    <string name="sign_in_required_status">Jesteś offline. Zaloguj się, aby zmienić status.</string>
+    <string name="msn_unavailable">Ta funkcja nie jest jeszcze dostępna.</string>
+    <string name="format_color">Kolor tekstu…</string>
+    <string name="msn_signed_in">właśnie się zalogował(a)</string>
 </resources>
+
+

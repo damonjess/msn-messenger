@@ -142,6 +142,18 @@ class ContactAdapter(
                 binding.tvTitle.text = nickname
             }
 
+            // Personal message under the name (online contacts only, like the original)
+            val psm = contact.personalMessage
+            val isOnlineNow = status != MSNPProto.Status.OFFLINE && status != MSNPProto.Status.HIDDEN &&
+                !status.equals("FLN", ignoreCase = true)
+            if (isOnlineNow && !psm.isNullOrBlank()) {
+                binding.tvSubtitle.text = FormattingUtils.formatBBCode(psm)
+                binding.tvSubtitle.setTextColor(if (isSelected) Color.parseColor("#DCE8F7") else Color.parseColor("#555555"))
+                binding.tvSubtitle.visibility = View.VISIBLE
+            } else {
+                binding.tvSubtitle.visibility = View.GONE
+            }
+
             // MSN Status Icon
             when (status) {
                 MSNPProto.Status.ONLINE -> binding.ivMsnStatusIcon.setImageResource(R.drawable.ic_msn_online)
@@ -216,3 +228,5 @@ class ContactAdapter(
         }
     }
 }
+
+

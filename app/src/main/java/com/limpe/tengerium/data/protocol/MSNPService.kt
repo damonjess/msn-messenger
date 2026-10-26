@@ -212,7 +212,7 @@ class MSNPService : Service() {
                             // Не присылаем уведомление о том, что наш собственный аккаунт в сети
                             val isNotMe = account != myAccount
                             
-                            if (wasOffline && isOnline && isNotMe) {
+                            if (wasOffline && isOnline && isNotMe && !com.limpe.tengerium.util.AppForeground.visible) {
                                 val contact = repository.contacts.value.find { it.account.lowercase(Locale.ROOT) == account }
                                 val nickname = contact?.nickname?.ifEmpty { account } ?: account
                                 showEventNotification(
@@ -413,10 +413,11 @@ class MSNPService : Service() {
             ).addRemoteInput(remoteInput).build()
 
             val effectiveNickname = nickname.ifEmpty { normalizedSender }
-            val displayMessage = if (message == "[NUDGE]") {
-                context.getString(R.string.nudge_received_sys, effectiveNickname)
-            } else {
-                message
+            val wink = com.limpe.tengerium.ui.WinkCatalog.fromMessage(message)
+            val displayMessage = when {
+                message == "[NUDGE]" -> context.getString(R.string.nudge_received_sys, effectiveNickname)
+                wink != null -> "${wink.emoji}  ${wink.name}"
+                else -> message
             }
 
             val builder = NotificationCompat.Builder(context, CHANNEL_ID_MESSAGES)
@@ -532,3 +533,5 @@ class MSNPService : Service() {
         }
     }
 }
+
+

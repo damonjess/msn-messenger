@@ -315,4 +315,22 @@
     <string name="easter_egg_source">Крыніца %1$s</string>
     <string name="whats_new_title">Што новага</string>
 
+    <string name="format_bold">Тоўсты</string>
+    <string name="format_italic">Курсіў</string>
+    <string name="format_underline">Падкрэслены</string>
+    <string name="winks_title">Падміргванні</string>
+    <string name="winks_select">Выберыце падміргванне</string>
+    <string name="winks_select_hint">Выберыце падміргванне са спісу ніжэй і адпраўце яго кантакту.</string>
+    <string name="winks_default">Стандартныя падміргванні</string>
+    <string name="winks_selected">Выбранае падміргванне</string>
+    <string name="winks_view">ПРАГЛЯД</string>
+    <string name="winks_submit">АДПРАВІЦЬ</string>
+    <string name="wink_sent">Вы адправілі падміргванне</string>
+    <string name="wink_received">Адправіў(ла) вам падміргванне</string>
+    <string name="sign_in_required_status">Вы не ў сетцы. Увайдзіце, каб змяніць статус.</string>
+    <string name="msn_unavailable">Гэта функцыя пакуль недаступная.</string>
+    <string name="format_color">Колер тэксту…</string>
+    <string name="msn_signed_in">толькі што ўвайшоў(ла) ў сетку</string>
 </resources>
+
+

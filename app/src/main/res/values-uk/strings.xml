@@ -314,4 +314,22 @@
     <string name="easter_egg_source">Джерело %1$s</string>
     <string name="whats_new_title">Що нового</string>
 
+    <string name="format_bold">Жирний</string>
+    <string name="format_italic">Курсив</string>
+    <string name="format_underline">Підкреслений</string>
+    <string name="winks_title">Підморгування</string>
+    <string name="winks_select">Виберіть підморгування</string>
+    <string name="winks_select_hint">Виберіть підморгування зі списку нижче та надішліть його контакту.</string>
+    <string name="winks_default">Стандартні підморгування</string>
+    <string name="winks_selected">Вибране підморгування</string>
+    <string name="winks_view">ПЕРЕГЛЯД</string>
+    <string name="winks_submit">НАДІСЛАТИ</string>
+    <string name="wink_sent">Ви надіслали підморгування</string>
+    <string name="wink_received">Надіслав(ла) вам підморгування</string>
+    <string name="sign_in_required_status">Ви не в мережі. Увійдіть, щоб змінити статус.</string>
+    <string name="msn_unavailable">Ця функція поки що недоступна.</string>
+    <string name="format_color">Колір тексту…</string>
+    <string name="msn_signed_in">щойно ввійшов(ла) в мережу</string>
 </resources>
+
+

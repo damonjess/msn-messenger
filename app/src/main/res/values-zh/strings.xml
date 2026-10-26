@@ -314,4 +314,22 @@
     <string name="easter_egg_source">来源 %1$s</string>
     <string name="whats_new_title">更新内容</string>
 
+    <string name="format_bold">粗体</string>
+    <string name="format_italic">斜体</string>
+    <string name="format_underline">下划线</string>
+    <string name="winks_title">动画表情</string>
+    <string name="winks_select">选择动画表情</string>
+    <string name="winks_select_hint">从下面的列表中选择一个动画表情并发送给联系人。</string>
+    <string name="winks_default">默认动画表情</string>
+    <string name="winks_selected">已选动画表情</string>
+    <string name="winks_view">预览</string>
+    <string name="winks_submit">发送</string>
+    <string name="wink_sent">你发送了一个动画表情</string>
+    <string name="wink_received">向你发送了一个动画表情</string>
+    <string name="sign_in_required_status">你已离线。请登录以更改状态。</string>
+    <string name="msn_unavailable">此功能暂不可用。</string>
+    <string name="format_color">文字颜色…</string>
+    <string name="msn_signed_in">刚刚上线</string>
 </resources>
+
+

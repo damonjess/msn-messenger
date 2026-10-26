@@ -267,6 +267,11 @@ class SecurePrefs(private val context: Context) {
         get() = plainPrefs.getBoolean("notify_login", true)
         set(value) = plainPrefs.edit().putBoolean("notify_login", value).apply()
 
+    /** Colour (0xRRGGBB) applied to outgoing messages; 0 means the default text colour. */
+    var messageColor: Int
+        get() = plainPrefs.getInt("message_color", 0)
+        set(value) = plainPrefs.edit().putInt("message_color", value).apply()
+
     var notifyNudge: Boolean
         get() = plainPrefs.getBoolean("notify_nudge", true)
         set(value) = plainPrefs.edit().putBoolean("notify_nudge", value).apply()
@@ -283,3 +288,5 @@ class SecurePrefs(private val context: Context) {
         get() = plainPrefs.getBoolean("chat_sounds_enabled", true)
         set(value) = plainPrefs.edit().putBoolean("chat_sounds_enabled", value).apply()
 }
+
+

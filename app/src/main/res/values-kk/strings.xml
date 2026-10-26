@@ -315,4 +315,22 @@
     <string name="easter_egg_source">Дереккөз %1$s</string>
     <string name="whats_new_title">Жаңалықтар</string>
 
+    <string name="format_bold">Қалың</string>
+    <string name="format_italic">Көлбеу</string>
+    <string name="format_underline">Асты сызылған</string>
+    <string name="winks_title">Көз қысулар</string>
+    <string name="winks_select">Көз қысуды таңдаңыз</string>
+    <string name="winks_select_hint">Төмендегі тізімнен көз қысуды таңдап, контактіге жіберіңіз.</string>
+    <string name="winks_default">Стандартты көз қысулар</string>
+    <string name="winks_selected">Таңдалған көз қысу</string>
+    <string name="winks_view">КӨРУ</string>
+    <string name="winks_submit">ЖІБЕРУ</string>
+    <string name="wink_sent">Сіз көз қысу жібердіңіз</string>
+    <string name="wink_received">Сізге көз қысу жіберді</string>
+    <string name="sign_in_required_status">Сіз желіде емессіз. Күйді өзгерту үшін кіріңіз.</string>
+    <string name="msn_unavailable">Бұл функция әзірге қолжетімсіз.</string>
+    <string name="format_color">Мәтін түсі…</string>
+    <string name="msn_signed_in">жаңа ғана желіге кірді</string>
 </resources>
+
+

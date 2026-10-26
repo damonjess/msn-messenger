@@ -56,6 +56,11 @@ class MSNPRepository @Inject constructor(val context: Context) : MSNPProtocolLis
     val pendingRequests = contactManager.pendingRequests
     val groups = contactManager.groups
     val incomingMessageFlow = messageManager.incomingMessageFlow
+
+    /** A contact has just signed in (not emitted for the initial contact list load). */
+    data class ContactSignIn(val account: String, val nickname: String)
+    private val _contactSignIns = MutableSharedFlow<ContactSignIn>(extraBufferCapacity = 8)
+    val contactSignIns: SharedFlow<ContactSignIn> = _contactSignIns.asSharedFlow()
     val contactAddedFlow = contactManager.contactAddedFlow
     private val _incomingFileTransfers = MutableStateFlow<List<IncomingFileTransfer>>(emptyList())
     val incomingFileTransfers: StateFlow<List<IncomingFileTransfer>> = _incomingFileTransfers.asStateFlow()
@@ -605,6 +610,12 @@ class MSNPRepository @Inject constructor(val context: Context) : MSNPProtocolLis
         val avatarPath = avatarFile?.absolutePath
         
         val cameOnline = contactManager.updateContactStatus(account, status, nickname, avatarPath)
+
+        if (cameOnline && !isInitial && normalized != currentAccount && status != MSNPProto.Status.HIDDEN) {
+            val known = contactManager.contacts.value.find { it.account.lowercase(Locale.ROOT).trim() == normalized }
+            val shownName = known?.nickname?.takeIf { it.isNotEmpty() } ?: nickname.ifEmpty { account }
+            _contactSignIns.tryEmit(ContactSignIn(account, shownName))
+        }
         
         // Если контакт появился в сети, проверяем очередь сообщений
         if (cameOnline && !securePrefs.disableMessageQueue) {
@@ -812,3 +823,5 @@ class MSNPRepository @Inject constructor(val context: Context) : MSNPProtocolLis
         saveContactsAndGroupsToDb()
     }
 }
+
+

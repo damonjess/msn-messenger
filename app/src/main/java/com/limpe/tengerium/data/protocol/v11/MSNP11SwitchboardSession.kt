@@ -99,7 +99,10 @@ class MSNP11SwitchboardSession(
                     when (event) {
                         is Event.TextMessage -> {
                             val sender = MSNPUtils.normalizeEmail(event.email)
-                            val originalText = event.message.text
+                            val originalText = com.limpe.tengerium.util.MsnTextFormat.fromWire(
+                                event.message.text, event.message.bold, event.message.italic, event.message.underline,
+                                event.message.color
+                            )
                             val target = getTarget(sender)
                             Log.d(TAG, "MSG from $sender: ${originalText.take(20)}...")
                             
@@ -257,9 +260,10 @@ class MSNP11SwitchboardSession(
         scope.safeLaunch(TAG) {
             try {
                 if (waitForConnection() && rustWrapper != null) {
+                    val wire = com.limpe.tengerium.util.MsnTextFormat.toWire(text)
                     rustWrapper?.sendTextMessage(PlainText(
-                        bold = false, italic = false, underline = false, strikethrough = false,
-                        color = "000000", text = text
+                        bold = wire.bold, italic = wire.italic, underline = wire.underline, strikethrough = false,
+                        color = wire.color, text = wire.text
                     ))
                     listener.onMessageSent(messageId)
                 } else {
@@ -375,3 +379,5 @@ class MSNP11SwitchboardSession(
     override fun isJoined() = isConnected
     override fun isConnecting() = !isConnected && rustWrapper != null
 }
+
+
