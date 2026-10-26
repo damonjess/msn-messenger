@@ -50,6 +50,32 @@
 
     <style name="Theme.Tengerium.GlassBottomSheet" parent="Theme.Material3.DayNight.BottomSheetDialog" />
 
+    <!-- Shared activity board (tic-tac-toe cells and rock-paper-scissors choices) -->
+    <style name="GameCell" parent="Widget.Material3.Button">
+        <item name="android:layout_width">96dp</item>
+        <item name="android:layout_height">96dp</item>
+        <item name="android:layout_margin">4dp</item>
+        <item name="android:backgroundTint">#16283D</item>
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:textSize">34sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+    </style>
+
+    <style name="GameChoice" parent="Widget.Material3.Button">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">60dp</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:layout_margin">4dp</item>
+        <item name="android:backgroundTint">#16283D</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+    </style>
+
     <style name="Theme.Tengerium.ModalProfile" parent="Theme.Material3.DayNight.Dialog">
         <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.Tengerium.Dialog</item>
         <item name="android:windowBackground">@android:color/transparent</item>

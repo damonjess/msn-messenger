@@ -100,6 +100,13 @@
             android:turnScreenOn="true"
             android:theme="@style/Theme.Tengerium" />
 
+        <!-- Shared activities: tic-tac-toe and rock-paper-scissors -->
+        <activity
+            android:name=".ui.games.GameActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:theme="@style/Theme.Tengerium" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

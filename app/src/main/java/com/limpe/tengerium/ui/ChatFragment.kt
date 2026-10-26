@@ -58,6 +58,9 @@ import com.limpe.tengerium.databinding.FragmentChatBinding
 import com.limpe.tengerium.databinding.LayoutChatMenuBinding
 import com.limpe.tengerium.ui.call.CallActivity
 import com.limpe.tengerium.ui.call.CallManager
+import com.limpe.tengerium.ui.games.GameActivity
+import com.limpe.tengerium.ui.games.GameKind
+import com.limpe.tengerium.ui.games.GameManager
 import com.limpe.tengerium.util.AnimationHelper
 import com.limpe.tengerium.util.ChatHistoryExporter
 import com.limpe.tengerium.util.FormattingUtils
@@ -235,7 +238,7 @@ class ChatFragment : Fragment() {
         binding.btnActionSendFile.setOnClickListener { showAttachMenu(it) }
         binding.btnActionVideo.setOnClickListener { startCall(CallManager.Media.VIDEO) }
         binding.btnActionVoice.setOnClickListener { openVoiceClip() }
-        binding.btnActionActivities.setOnClickListener { showUnavailable() }
+        binding.btnActionActivities.setOnClickListener { showActivitiesMenu(it) }
         binding.btnActionGames.setOnClickListener {
             val parent = findMainFragment()
             if (parent != null) {
@@ -863,6 +866,34 @@ class ChatFragment : Fragment() {
     }
 
     // ---- voice clips / handwriting / photos ---------------------------------------------
+
+    /** MSN-style Activities menu: a shared game both contacts play at the same time. */
+    private fun showActivitiesMenu(anchor: View) {
+        val popup = PopupMenu(requireContext(), anchor)
+        popup.menu.add(0, 1, 0, R.string.game_tic_tac_toe)
+        popup.menu.add(0, 2, 1, R.string.game_rps)
+        popup.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                1 -> startSharedActivity(GameKind.TIC_TAC_TOE)
+                2 -> startSharedActivity(GameKind.ROCK_PAPER_SCISSORS)
+            }
+            true
+        }
+        popup.show()
+    }
+
+    private fun startSharedActivity(kind: GameKind) {
+        val target = contactAccount ?: return
+        if (!target.contains('@')) {
+            Toast.makeText(requireContext(), R.string.game_one_to_one, Toast.LENGTH_LONG).show()
+            return
+        }
+        if (!GameManager.startGame(target, kind)) {
+            Toast.makeText(requireContext(), R.string.game_busy, Toast.LENGTH_SHORT).show()
+            return
+        }
+        startActivity(Intent(requireContext(), GameActivity::class.java))
+    }
 
     private fun showAttachMenu(anchor: View) {
         val popup = PopupMenu(requireContext(), anchor)

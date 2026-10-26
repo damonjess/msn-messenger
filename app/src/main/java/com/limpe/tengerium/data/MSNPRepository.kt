@@ -16,6 +16,7 @@ import com.limpe.tengerium.domain.model.Group
 import com.limpe.tengerium.util.UiConstants
 import com.limpe.tengerium.ui.AvatarUtils
 import com.limpe.tengerium.ui.call.CallManager
+import com.limpe.tengerium.ui.games.GameManager
 import kotlinx.coroutines.Dispatchers
 import com.limpe.tengerium.util.NetworkObserver
 import kotlinx.coroutines.*
@@ -98,9 +99,11 @@ class MSNPRepository @Inject constructor(val context: Context) : MSNPProtocolLis
     private var sessionPass: String? = null
 
     init {
-        // Call signalling rides on the chat channel; nothing extra is needed from the server.
+        // Call and activity signalling ride on the chat channel; nothing extra is needed from the server.
         CallManager.initialize(context)
         CallManager.transport = { peer, text -> sendSignal(peer, text) }
+        GameManager.initialize(context)
+        GameManager.transport = { peer, text -> sendSignal(peer, text) }
 
         startOutboxRetryProcessor()
 
@@ -736,8 +739,9 @@ class MSNPRepository @Inject constructor(val context: Context) : MSNPProtocolLis
     }
 
     override fun onMessageReceived(target: String, senderAccount: String, nickname: String, message: String) {
-        // Call markers drive the call and must stay out of the chat and its notifications.
+        // Call and activity markers drive their screens and must stay out of the chat.
         if (CallManager.onSignal(senderAccount, target, message)) return
+        if (GameManager.onSignal(senderAccount, target, message)) return
         scope.launch {
             messageManager.saveAndEmitMessage(getCurrentAccount() ?: "", senderAccount, message, true, nickname)
             MSNPService.showMessageNotification(context, nickname, message, senderAccount)
