@@ -56,6 +56,8 @@ import com.limpe.tengerium.data.protocol.MSNPProto
 import com.limpe.tengerium.data.security.SecurePrefs
 import com.limpe.tengerium.databinding.FragmentChatBinding
 import com.limpe.tengerium.databinding.LayoutChatMenuBinding
+import com.limpe.tengerium.ui.call.CallActivity
+import com.limpe.tengerium.ui.call.CallManager
 import com.limpe.tengerium.util.AnimationHelper
 import com.limpe.tengerium.util.ChatHistoryExporter
 import com.limpe.tengerium.util.FormattingUtils
@@ -128,6 +130,18 @@ class ChatFragment : Fragment() {
         if (!isAdded) return@registerForActivityResult
         if (granted) showVoiceClipDialog()
         else Toast.makeText(requireContext(), R.string.voice_clip_permission_needed, Toast.LENGTH_LONG).show()
+    }
+
+    private var pendingCallMedia: CallManager.Media? = null
+
+    private val callPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { grants ->
+        val media = pendingCallMedia
+        pendingCallMedia = null
+        if (!isAdded) return@registerForActivityResult
+        if (media != null) {
+            if (grants.values.all { it }) startCallNow(media)
+            else Toast.makeText(requireContext(), R.string.call_permission_needed, Toast.LENGTH_LONG).show()
+        }
     }
 
     private val saveIncomingFileLauncher = registerForActivityResult(ActivityResultContracts.CreateDocument("*/*")) { uri ->
@@ -219,7 +233,7 @@ class ChatFragment : Fragment() {
             }
         }
         binding.btnActionSendFile.setOnClickListener { showAttachMenu(it) }
-        binding.btnActionVideo.setOnClickListener { showUnavailable() }
+        binding.btnActionVideo.setOnClickListener { startCall(CallManager.Media.VIDEO) }
         binding.btnActionVoice.setOnClickListener { openVoiceClip() }
         binding.btnActionActivities.setOnClickListener { showUnavailable() }
         binding.btnActionGames.setOnClickListener {
@@ -856,12 +870,14 @@ class ChatFragment : Fragment() {
         popup.menu.add(0, 2, 1, R.string.send_file)
         popup.menu.add(0, 3, 2, R.string.voice_clip)
         popup.menu.add(0, 4, 3, R.string.handwriting)
+        popup.menu.add(0, 5, 4, R.string.call_voice)
         popup.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 1 -> choosePhotoToSend()
                 2 -> chooseFileToSend()
                 3 -> openVoiceClip()
                 4 -> openInkDialog()
+                5 -> startCall(CallManager.Media.AUDIO)
             }
             true
         }
@@ -945,6 +961,35 @@ class ChatFragment : Fragment() {
                 }
             }
         }
+    }
+
+    /** Starts a live call with the open contact, asking for the permissions it needs first. */
+    private fun startCall(media: CallManager.Media) {
+        val target = contactAccount ?: return
+        if (!target.contains('@')) {
+            Toast.makeText(requireContext(), R.string.file_transfer_one_to_one_only, Toast.LENGTH_LONG).show()
+            return
+        }
+        val required = mutableListOf(Manifest.permission.RECORD_AUDIO)
+        if (media == CallManager.Media.VIDEO) required.add(Manifest.permission.CAMERA)
+        val missing = required.filter {
+            ContextCompat.checkSelfPermission(requireContext(), it) != PackageManager.PERMISSION_GRANTED
+        }
+        if (missing.isEmpty()) {
+            startCallNow(media)
+        } else {
+            pendingCallMedia = media
+            callPermissionLauncher.launch(missing.toTypedArray())
+        }
+    }
+
+    private fun startCallNow(media: CallManager.Media) {
+        val target = contactAccount ?: return
+        if (!CallManager.startCall(target, media)) {
+            Toast.makeText(requireContext(), R.string.call_busy, Toast.LENGTH_SHORT).show()
+            return
+        }
+        startActivity(Intent(requireContext(), CallActivity::class.java))
     }
 
     private fun fileStamp(): String =

@@ -15,6 +15,7 @@ import com.limpe.tengerium.domain.model.Contact
 import com.limpe.tengerium.domain.model.Group
 import com.limpe.tengerium.util.UiConstants
 import com.limpe.tengerium.ui.AvatarUtils
+import com.limpe.tengerium.ui.call.CallManager
 import kotlinx.coroutines.Dispatchers
 import com.limpe.tengerium.util.NetworkObserver
 import kotlinx.coroutines.*
@@ -34,6 +35,9 @@ class MSNPRepository @Inject constructor(val context: Context) : MSNPProtocolLis
 
     companion object {
         private const val TAG = "MSNPRepository"
+
+        /** Signalling messages are never stored, so they use an id no chat row can have. */
+        private const val SIGNAL_MESSAGE_ID = -1L
     }
 
     val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -94,6 +98,10 @@ class MSNPRepository @Inject constructor(val context: Context) : MSNPProtocolLis
     private var sessionPass: String? = null
 
     init {
+        // Call signalling rides on the chat channel; nothing extra is needed from the server.
+        CallManager.initialize(context)
+        CallManager.transport = { peer, text -> sendSignal(peer, text) }
+
         startOutboxRetryProcessor()
 
         // Наблюдаем за состоянием сети глобально
@@ -301,6 +309,29 @@ class MSNPRepository @Inject constructor(val context: Context) : MSNPProtocolLis
             val account = getCurrentAccount() ?: ""
             val id = messageManager.saveAndEmitMessage(account, target, text, false)
             performSendMessageInternal(id, target, text)
+        }
+    }
+
+    /**
+     * Sends a call signalling marker straight to [peer] without adding it to the
+     * conversation. The message id is a sentinel, so no chat row is created or updated.
+     */
+    fun sendSignal(peer: String, text: String) {
+        val normalized = peer.lowercase(Locale.ROOT).trim()
+        if (!normalized.contains('@')) return
+        scope.launch {
+            try {
+                val session = withTimeoutOrNull(12_000) { sessionManager.getOrOpenSession(normalized) }
+                if (session == null) {
+                    Log.w(TAG, "No chat session for call signalling to $normalized")
+                    return@launch
+                }
+                session.sendMessage(text, SIGNAL_MESSAGE_ID)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w(TAG, "Could not send call signalling to $normalized", e)
+            }
         }
     }
 
@@ -705,6 +736,8 @@ class MSNPRepository @Inject constructor(val context: Context) : MSNPProtocolLis
     }
 
     override fun onMessageReceived(target: String, senderAccount: String, nickname: String, message: String) {
+        // Call markers drive the call and must stay out of the chat and its notifications.
+        if (CallManager.onSignal(senderAccount, target, message)) return
         scope.launch {
             messageManager.saveAndEmitMessage(getCurrentAccount() ?: "", senderAccount, message, true, nickname)
             MSNPService.showMessageNotification(context, nickname, message, senderAccount)

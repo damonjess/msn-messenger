@@ -14,6 +14,7 @@ import com.google.android.material.color.DynamicColors
 import com.google.android.material.color.DynamicColorsOptions
 import com.limpe.tengerium.data.MSNPRepository
 import com.limpe.tengerium.data.security.SecurePrefs
+import com.limpe.tengerium.ui.call.CallManager
 import net.sqlcipher.database.SQLiteDatabase
 import java.io.PrintWriter
 import java.io.StringWriter
@@ -55,6 +56,7 @@ class TengeriumApp : Application() {
             .build())
         
         SQLiteDatabase.loadLibs(this)
+        CallManager.initialize(this)
         repository = MSNPRepository(this)
 
         // MSNPService.start(this) // Перенесено в MainActivity для предотвращения ForegroundServiceStartNotAllowedException

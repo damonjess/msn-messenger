@@ -21,6 +21,7 @@ googleServices = "4.4.1"
 firebaseBom = "32.8.0"
 jna = "5.14.0"
 imageCropper = "4.5.0"
+webrtc = "125.6422.07"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -68,6 +69,9 @@ jna = { group = "net.java.dev.jna", name = "jna", version.ref = "jna" }
 
 # Image Cropper
 android-image-cropper = { group = "com.github.CanHub", name = "Android-Image-Cropper", version.ref = "imageCropper" }
+
+# WebRTC media for voice/video calls
+webrtc-android = { group = "io.github.webrtc-sdk", name = "android", version.ref = "webrtc" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

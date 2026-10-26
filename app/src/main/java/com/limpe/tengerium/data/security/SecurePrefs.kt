@@ -187,6 +187,29 @@ class SecurePrefs(private val context: Context) {
         get() = plainPrefs.getString("config_url", "") ?: ""
         set(value) = plainPrefs.edit().putString("config_url", value).apply()
 
+    /** STUN server used to discover a path between the two callers. */
+    var callStunServer: String
+        get() = plainPrefs.getString("call_stun", "stun:stun.l.google.com:19302")
+            ?: "stun:stun.l.google.com:19302"
+        set(value) = plainPrefs.edit().putString("call_stun", value).apply()
+
+    /** Optional TURN relay, needed when the two devices cannot reach each other directly. */
+    var callTurnServer: String
+        get() = plainPrefs.getString("call_turn", "") ?: ""
+        set(value) = plainPrefs.edit().putString("call_turn", value).apply()
+
+    var callTurnUsername: String
+        get() = safeGet { encryptedPrefs.getString("call_turn_user", "") } ?: ""
+        set(value) {
+            encryptedPrefs.edit().putString("call_turn_user", value).apply()
+        }
+
+    var callTurnPassword: String
+        get() = safeGet { encryptedPrefs.getString("call_turn_pass", "") } ?: ""
+        set(value) {
+            encryptedPrefs.edit().putString("call_turn_pass", value).apply()
+        }
+
     var themePreset: Int
         get() = plainPrefs.getInt("theme_preset", 0)
         set(value) = plainPrefs.edit().putInt("theme_preset", value).apply()

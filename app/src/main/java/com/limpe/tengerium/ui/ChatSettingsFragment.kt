@@ -8,8 +8,12 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.text.InputType
+import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -156,6 +160,47 @@ class ChatSettingsFragment : Fragment() {
         binding.switchPhoneStatus.setOnCheckedChangeListener { _, isChecked ->
             securePrefs.phoneStatusEnabled = isChecked
         }
+
+        binding.btnCallNetwork.setOnClickListener { showCallNetworkDialog() }
+    }
+
+    /** Relay used by calls when the two phones cannot reach each other directly. */
+    private fun showCallNetworkDialog() {
+        val density = resources.displayMetrics.density
+        fun dp(value: Int) = (value * density).toInt()
+        val container = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(20), dp(8), dp(20), 0)
+        }
+        val serverInput = EditText(requireContext()).apply {
+            hint = getString(R.string.call_turn_hint)
+            setText(securePrefs.callTurnServer)
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
+        }
+        val userInput = EditText(requireContext()).apply {
+            hint = getString(R.string.call_turn_user_hint)
+            setText(securePrefs.callTurnUsername)
+        }
+        val passwordInput = EditText(requireContext()).apply {
+            hint = getString(R.string.call_turn_password_hint)
+            setText(securePrefs.callTurnPassword)
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+        }
+        container.addView(serverInput)
+        container.addView(userInput)
+        container.addView(passwordInput)
+
+        AlertDialog.Builder(requireContext())
+            .setTitle(R.string.call_turn_title)
+            .setView(container)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                securePrefs.callTurnServer = serverInput.text.toString().trim()
+                securePrefs.callTurnUsername = userInput.text.toString().trim()
+                securePrefs.callTurnPassword = passwordInput.text.toString()
+                Toast.makeText(requireContext(), R.string.call_turn_saved, Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
     }
 
     fun updateMode(mode: String) {
