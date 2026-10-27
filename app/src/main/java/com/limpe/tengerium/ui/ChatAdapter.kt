@@ -339,7 +339,14 @@ class ChatAdapter(
         fun bind(message: MessageEntity) {
             val wink = WinkCatalog.fromMessage(SafeStorage.decryptText(message.encryptedText))
                 ?: WinkCatalog.fallback
-            binding.tvWinkEmoji.text = wink.emoji
+            val artwork = WinkCatalog.artworkRes(wink.id)
+            binding.ivWinkArtwork.visibility = if (artwork == null) View.GONE else View.VISIBLE
+            binding.tvWinkEmoji.visibility = if (artwork == null) View.VISIBLE else View.GONE
+            if (artwork == null) {
+                binding.tvWinkEmoji.text = wink.emoji
+            } else {
+                binding.ivWinkArtwork.setImageResource(artwork)
+            }
             binding.tvWinkName.text = wink.name
             binding.cardWink.setOnClickListener { onClick(wink) }
             binding.tvWinkCaption.text = itemView.context.getString(
@@ -418,5 +425,3 @@ class ChatAdapter(
         }
     }
 }
-
-

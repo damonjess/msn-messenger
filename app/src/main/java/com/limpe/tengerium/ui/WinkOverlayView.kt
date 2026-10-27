@@ -4,6 +4,8 @@ import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.animation.ValueAnimator
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
@@ -15,6 +17,7 @@ import android.os.Build
 import android.util.AttributeSet
 import android.view.View
 import android.view.animation.LinearInterpolator
+import com.limpe.tengerium.R
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
@@ -40,7 +43,7 @@ class WinkOverlayView @JvmOverloads constructor(
 
     private enum class Kind {
         GUITAR, KISS, LAUGH, KNOCK, SLAP, PEEK, ICECREAM,
-        BALLOON, PIG, UFO, FROG, HEART, IDEA, PULSE
+        BALLOON, PIG, DANCE, UFO, FROG, HEART, IDEA, RETRO_ART, PULSE
     }
 
     private enum class Hair { SHORT, LONG, BOB, BEANIE, NONE }
@@ -66,6 +69,8 @@ class WinkOverlayView @JvmOverloads constructor(
     private val path = Path()
     private val path2 = Path()
     private val rect = RectF()
+    private val artworkPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+    private val artworkCache = mutableMapOf<Int, Bitmap>()
 
     private var animator: ValueAnimator? = null
     private var wink: Wink? = null
@@ -146,6 +151,7 @@ class WinkOverlayView @JvmOverloads constructor(
         WinkCatalog.ICECREAM -> Kind.ICECREAM
         WinkCatalog.BALLOON -> Kind.BALLOON
         WinkCatalog.PIG -> Kind.PIG
+        WinkCatalog.DANCE -> Kind.DANCE
         WinkCatalog.UFO -> Kind.UFO
         WinkCatalog.FROG -> Kind.FROG
         WinkCatalog.HEART -> Kind.HEART
@@ -155,18 +161,20 @@ class WinkOverlayView @JvmOverloads constructor(
 
     private fun durationFor(k: Kind): Long = when (k) {
         Kind.GUITAR -> 3200
-        Kind.KISS -> 2400
-        Kind.LAUGH -> 3600
-        Kind.KNOCK -> 2400
-        Kind.SLAP -> 3200
-        Kind.PEEK -> 2800
-        Kind.ICECREAM -> 3600
-        Kind.BALLOON -> 2800
+        Kind.KISS -> 2200
+        Kind.LAUGH -> 7200
+        Kind.KNOCK -> 2200
+        Kind.SLAP -> 6000
+        Kind.PEEK -> 4200
+        Kind.ICECREAM -> 4200
+        Kind.BALLOON -> 5600
         Kind.PIG -> 3400
+        Kind.DANCE -> 6200
         Kind.UFO -> 4200
         Kind.FROG -> 3600
         Kind.HEART -> 3400
         Kind.IDEA -> 3000
+        Kind.RETRO_ART -> 3900
         Kind.PULSE -> 2800
     }
 
@@ -609,12 +617,62 @@ class WinkOverlayView @JvmOverloads constructor(
             Kind.ICECREAM -> drawIceCream(canvas, w, t)
             Kind.BALLOON -> drawBalloon(canvas, w, t)
             Kind.PIG -> drawPig(canvas, w, t)
+            Kind.DANCE -> drawDance(canvas, t)
             Kind.UFO -> drawUfo(canvas, w, t)
             Kind.FROG -> drawFrog(canvas, w, t)
             Kind.HEART -> drawHeart(canvas, w, t)
             Kind.IDEA -> drawIdea(canvas, w, t)
+            Kind.RETRO_ART -> drawRetroArt(canvas, w, t)
             Kind.PULSE -> drawPulse(canvas, w, t)
         }
+    }
+
+    /** Full-screen illustrated Winks: large original characters with a dramatic pop-in. */
+    private fun drawRetroArt(canvas: Canvas, w: Wink, t: Float) {
+        val resource = WinkCatalog.artworkRes(w.id) ?: return
+        val bitmap = artworkCache.getOrPut(resource) {
+            BitmapFactory.decodeResource(resources, resource)
+        }
+        val unit = min(width, height).toFloat()
+        val enter = overshoot(seg(t, 0.015f, 0.23f)).coerceIn(0f, 1.12f)
+        val exit = 1f - seg(t, 0.91f, 1f)
+        val settle = 1f - seg(t, 0.28f, 0.74f)
+        val cx = width / 2f
+        val baseY = height * 0.49f
+        val bounce = sin(t * PI.toFloat() * 7f) * unit * 0.018f * settle
+        val fromX = if (w.id == WinkCatalog.LAUGH) -width * 0.25f else 0f
+        val fromY = if (w.id == WinkCatalog.KISS) height * 0.22f else height * 0.08f
+        val x = cx + fromX * (1f - enter)
+        val y = baseY + fromY * (1f - enter) + bounce
+        val size = unit * 1.03f * (0.25f + 0.75f * enter) * exit
+        val wobble = sin(t * PI.toFloat() * 10f) * 9f * settle
+
+        // A soft color halo and starbursts make the sticker feel like an event, not an emoji.
+        val haloColor = when (w.id) {
+            WinkCatalog.KISS -> Color.rgb(255, 62, 124)
+            WinkCatalog.LAUGH -> Color.rgb(40, 190, 255)
+            else -> Color.rgb(255, 184, 32)
+        }
+        fillCircle(canvas, x, y, size * 0.48f, haloColor, 0.16f * exit)
+        sparks.forEachIndexed { index, spark ->
+            val flight = seg(t, spark.delay * 0.18f, 0.76f + spark.delay * 0.18f)
+            if (flight <= 0f || flight >= 1f) return@forEachIndexed
+            val sx = x + (spark.x - 0.5f) * unit * (0.42f + flight * 0.52f)
+            val sy = y + (spark.y - 0.5f) * unit * (0.42f + flight * 0.52f)
+            sparkle(canvas, sx, sy, unit * spark.size * (0.3f + flight),
+                if (index % 2 == 0) Color.WHITE else haloColor,
+                t * spark.spin, (1f - flight) * exit)
+        }
+
+        canvas.save()
+        canvas.translate(x, y)
+        canvas.rotate(wobble)
+        val scale = size / min(bitmap.width, bitmap.height).toFloat()
+        canvas.scale(scale, scale)
+        artworkPaint.alpha = (255 * exit).toInt().coerceIn(0, 255)
+        canvas.drawBitmap(bitmap, -bitmap.width / 2f, -bitmap.height / 2f, artworkPaint)
+        canvas.restore()
+        artworkPaint.alpha = 255
     }
 
     // 1 ------------------------------------------------------------ Guitar Smash
@@ -732,16 +790,8 @@ class WinkOverlayView @JvmOverloads constructor(
         val cx = width / 2f
         val cy = height * 0.48f
 
-        // soft pink glow
-        val glow = 0.35f * (0.7f + 0.3f * sin(t * PI * 3).toFloat())
-        fill.alpha = 255
-        fill.shader = RadialGradient(
-            cx, cy, u * 0.75f,
-            intArrayOf(Color.argb((230 * glow).toInt(), 255, 150, 190), Color.argb(0, 255, 150, 190)),
-            null, Shader.TileMode.CLAMP
-        )
-        c.drawRect(0f, 0f, width.toFloat(), height.toFloat(), fill)
-        fill.shader = null
+        // Clean white card keeps the graphic red lips as the focus.
+        c.drawColor(Color.WHITE)
 
         val enter = overshoot(seg(t, 0f, 0.24f))
         val leave = easeIn(seg(t, 0.82f, 1f))
@@ -866,7 +916,7 @@ class WinkOverlayView @JvmOverloads constructor(
         val u = min(width, height).toFloat()
         val cx = width / 2f
         val cy = height * 0.46f
-        val bangs = floatArrayOf(0.05f, 0.29f, 0.53f, 0.77f)
+        val bangs = floatArrayOf(0.12f, 0.43f, 0.74f)
         val bangLen = 0.17f
 
         var shake = 0f
@@ -954,8 +1004,8 @@ class WinkOverlayView @JvmOverloads constructor(
         c.translate(cx, cy)
         c.rotate(angle)
         c.scale(size / 100f, size / 100f)
-        val skinTone = Color.rgb(246, 196, 150)
-        val edge = Color.rgb(196, 138, 96)
+        val skinTone = Color.rgb(176, 184, 194)
+        val edge = Color.rgb(112, 122, 136)
 
         // wrist
         rrect(c, -5f, -23f, 92f, 34f, 18f, skinTone, alpha)
@@ -996,6 +1046,21 @@ class WinkOverlayView @JvmOverloads constructor(
         val dance = sin(t * PI * 4).toFloat() * u * 0.03f
         val isClap = beatIndex % 2 == 0
 
+        // A simple original crowd silhouette makes the conductor gesture read clearly.
+        for (i in 0 until 7) {
+            val personX = width * (0.08f + i * 0.14f)
+            val personY = height * 0.88f
+            val personR = u * (0.025f + (i % 3) * 0.004f)
+            val armWave = sin(t * PI * 5f + i * 1.7f).toFloat()
+            fillCircle(c, personX, personY - personR * 2.2f, personR, Color.rgb(68, 90, 142), 0.85f)
+            oval(c, personX - personR * 1.25f, personY - personR, personX + personR * 1.25f,
+                personY + personR * 2.2f, Color.rgb(68, 90, 142), 0.85f)
+            line(c, personX - personR, personY, personX - personR * 2.1f,
+                personY - personR * (1.1f + 0.8f * armWave), Color.rgb(68, 90, 142), personR * 0.28f, 0.85f)
+            line(c, personX + personR, personY, personX + personR * 2.1f,
+                personY - personR * (1.1f - 0.8f * armWave), Color.rgb(68, 90, 142), personR * 0.28f, 0.85f)
+        }
+
         c.save()
         c.translate(cx + dance, cy - bounce * u * 0.03f)
         c.scale(appear * pop, appear * pop)
@@ -1032,21 +1097,16 @@ class WinkOverlayView @JvmOverloads constructor(
         val mouthOpen = r * (0.1f + 0.08f * bounce)
         arc(c, 0f, r * 0.12f, r * 0.42f, mouthOpen, 20f, 140f, Color.rgb(72, 48, 18), r * 0.06f)
 
-        // hands and arms, drawn over the face so they stay visible
+        // The smiley conducts: each arm sweeps up and down on the beat.
         val handR = r * 0.19f
-        val close = sin(beat * PI).toFloat()
-        var lhx = -r * 1.2f
-        var lhy = r * (0.5f + 0.22f * bounce)
-        var rhx = r * 1.2f
-        var rhy = r * (0.5f + 0.22f * bounce)
-        if (isClap) {
-            lhx = -lerp(r * 1.0f, r * 0.18f, close)
-            rhx = lerp(r * 1.0f, r * 0.18f, close)
-            lhy = r * 0.52f
-            rhy = r * 0.52f
-        }
-        line(c, -r * 0.8f, r * 0.12f, lhx, lhy, Color.rgb(240, 196, 40), r * 0.13f)
-        line(c, r * 0.8f, r * 0.12f, rhx, rhy, Color.rgb(240, 196, 40), r * 0.13f)
+        val leftWave = sin(t * PI * 6f).toFloat()
+        val rightWave = sin(t * PI * 6f + PI.toFloat()).toFloat()
+        val lhx = -r * 1.15f
+        val lhy = -r * (0.45f + 0.58f * (0.5f + 0.5f * leftWave))
+        val rhx = r * 1.15f
+        val rhy = -r * (0.45f + 0.58f * (0.5f + 0.5f * rightWave))
+        line(c, -r * 0.78f, r * 0.02f, lhx, lhy, Color.rgb(240, 196, 40), r * 0.13f)
+        line(c, r * 0.78f, r * 0.02f, rhx, rhy, Color.rgb(240, 196, 40), r * 0.13f)
         fillCircle(c, lhx, lhy, handR, Color.rgb(255, 217, 60))
         fillCircle(c, rhx, rhy, handR, Color.rgb(255, 217, 60))
         ring(c, lhx, lhy, handR, Color.rgb(198, 150, 20), r * 0.02f)
@@ -1058,13 +1118,10 @@ class WinkOverlayView @JvmOverloads constructor(
         ringOval(c, -r * 0.52f, r * 0.94f, -r * 0.1f, r * 1.14f, Color.rgb(198, 150, 20), r * 0.018f)
         ringOval(c, r * 0.1f, r * 0.94f, r * 0.52f, r * 1.14f, Color.rgb(198, 150, 20), r * 0.018f)
 
-        // contact sparkles
         if (beat > 0.35f && beat < 0.85f) {
             val k = seg(beat, 0.35f, 0.85f)
-            val sx = if (isClap) 0f else r * 1.2f
-            val sy = if (isClap) r * 0.55f else r * 0.62f
-            sparkle(c, sx, sy, r * 0.16f * (1f - k), Color.WHITE, 15f, (1f - k) * 0.9f)
-            if (!isClap) sparkle(c, -sx, sy, r * 0.16f * (1f - k), Color.WHITE, -15f, (1f - k) * 0.9f)
+            sparkle(c, lhx, lhy, r * 0.14f * (1f - k), Color.WHITE, t * 280f, (1f - k) * 0.7f)
+            sparkle(c, rhx, rhy, r * 0.14f * (1f - k), Color.WHITE, -t * 280f, (1f - k) * 0.7f)
         }
 
         c.restore()
@@ -1085,17 +1142,14 @@ class WinkOverlayView @JvmOverloads constructor(
 
     private fun drawPeek(c: Canvas, w: Wink, t: Float) {
         val u = min(width, height).toFloat()
-        val cx = width / 2f
-        val bottom = height.toFloat()
+        val edgeX = width * 0.28f
+        val centerY = height * 0.49f
         val headR = u * 0.105f
-        val edgeY = height * 0.9f
-
-        val rise = overshoot(seg(t, 0f, 0.3f))
+        val rise = overshoot(seg(t, 0f, 0.30f))
         val duck = easeIn(seg(t, 0.84f, 1f))
-        val restY = edgeY - headR * 0.8f
-        val hiddenY = edgeY + headR * 1.2f
-        val y = lerp(hiddenY, restY, rise) + duck * (hiddenY - restY)
-
+        val hiddenX = edgeX - headR * 1.18f
+        val visibleX = edgeX + headR * 0.92f
+        val x = lerp(hiddenX, visibleX, rise) - duck * (visibleX - hiddenX)
         val scan = sin(t * PI * 3.2f).toFloat()
         val blink = t in 0.44f..0.48f
         val tongue = if (t in 0.56f..0.8f) {
@@ -1103,41 +1157,37 @@ class WinkOverlayView @JvmOverloads constructor(
             k * (1f - seg(t, 0.76f, 0.82f)) * (1f + 0.12f * sin(t * PI * 26).toFloat())
         } else 0f
 
-        // shoulders behind the head
-        torso(c, cx, y + headR * 0.7f, headR * 1.7f, headR * 1.4f, Color.rgb(60, 120, 190), 1f)
-
-        head(c, cx, y, headR, Color.rgb(250, 205, 160), Color.rgb(96, 64, 36), Hair.SHORT,
+        // Character appears from behind a vertical desktop-window edge.
+        torso(c, x + headR * 0.58f, centerY + headR * 0.72f, headR * 1.7f, headR * 1.35f,
+            Color.rgb(60, 120, 190), 1f)
+        head(c, x, centerY, headR, Color.rgb(250, 205, 160), Color.rgb(96, 64, 36), Hair.SHORT,
             if (tongue > 0f) Face.TONGUE else Face.SMILE,
             blink = blink, lookX = scan, lookY = -0.2f, tongue = tongue)
 
-        // the window edge he is holding on to, in front of his body
-        rrect(c, 0f, edgeY, width.toFloat(), bottom, u * 0.02f, Color.rgb(196, 208, 224))
-        line(c, 0f, edgeY, width.toFloat(), edgeY, Color.WHITE, u * 0.006f, 0.9f)
-        line(c, 0f, edgeY + u * 0.006f, width.toFloat(), edgeY + u * 0.006f,
-            Color.rgb(150, 164, 182), u * 0.003f, 0.8f)
+        // Pale panel and bevel; the face is clipped behind it until he leans out.
+        rrect(c, 0f, 0f, edgeX, height.toFloat(), u * 0.02f, Color.rgb(196, 208, 224))
+        line(c, edgeX, 0f, edgeX, height.toFloat(), Color.WHITE, u * 0.009f)
+        line(c, edgeX + u * 0.008f, 0f, edgeX + u * 0.008f, height.toFloat(),
+            Color.rgb(126, 144, 168), u * 0.004f, 0.8f)
 
-        // hands gripping the edge
-        val grip = if (t in 0.1f..0.85f) 1f else 0f
-        if (grip > 0f) {
+        // Fingers curling around the edge make the peek feel attached to the window.
+        if (t in 0.10f..0.86f) {
             for (side in intArrayOf(-1, 1)) {
-                val hx = cx + side * headR * 1.05f
-                val hy = edgeY
-                rrect(c, hx - u * 0.024f, hy - u * 0.04f, hx + u * 0.024f, hy + u * 0.01f,
-                    u * 0.012f, Color.rgb(250, 205, 160))
+                val hy = centerY + side * headR * 0.72f
+                rrect(c, edgeX - u * 0.015f, hy - u * 0.025f, edgeX + u * 0.038f,
+                    hy + u * 0.025f, u * 0.012f, Color.rgb(250, 205, 160))
                 for (i in 0 until 3) {
-                    val fx = hx - u * 0.017f + i * u * 0.017f
-                    rrect(c, fx - u * 0.006f, hy - u * 0.05f, fx + u * 0.006f, hy - u * 0.012f,
-                        u * 0.005f, Color.rgb(242, 190, 145))
+                    val fy = hy - u * 0.016f + i * u * 0.016f
+                    line(c, edgeX + u * 0.008f, fy, edgeX + u * 0.03f, fy,
+                        Color.rgb(224, 166, 128), u * 0.003f, 0.8f)
                 }
             }
         }
-
-        // dust puff when he ducks away
         if (duck > 0.2f) {
             for (i in 0 until 4) {
-                val side = if (i % 2 == 0) -1 else 1
-                fillCircle(c, cx + side * headR * (0.8f + i * 0.2f), bottom - u * 0.02f,
-                    u * 0.02f * (0.6f + duck), Color.rgb(210, 220, 232), (1f - duck) * 0.55f)
+                val y = centerY + (i - 1.5f) * headR * 0.4f
+                fillCircle(c, edgeX + u * (0.04f + i * 0.012f), y, u * 0.018f * duck,
+                    Color.rgb(210, 220, 232), (1f - duck) * 0.55f)
             }
         }
     }
@@ -1162,7 +1212,7 @@ class WinkOverlayView @JvmOverloads constructor(
         c.scale(appear, appear)
 
         val skinTone = Color.rgb(250, 206, 162)
-        val shirt = Color.rgb(66, 148, 96)
+        val shirt = Color.rgb(198, 44, 52)
         val shorts = Color.rgb(52, 66, 104)
 
         // legs
@@ -1193,7 +1243,7 @@ class WinkOverlayView @JvmOverloads constructor(
             else -> Face.SOB
         }
         head(c, 0f, -u * 0.17f, headR, skinTone, Color.rgb(64, 44, 30), Hair.SHORT, face,
-            glasses = true, tears = if (crying) 1f else 0f)
+            glasses = false, tears = if (crying) 1f else 0f)
 
         // the ice cream cone
         val coneTopY = coneHandY - u * 0.055f
@@ -1275,96 +1325,91 @@ class WinkOverlayView @JvmOverloads constructor(
         val u = min(width, height).toFloat()
         val cx = width / 2f
         val headR = u * 0.078f
-        val bodyY = height * 0.56f
-        val impactT = 0.55f
+        val bodyY = height * 0.58f
+        val popAt = 0.78f
+        val popped = t >= popAt
+        val surprise = if (popped) 1f - seg(t, popAt, popAt + 0.24f) else 0f
+        val shake = if (popped) sin(t * PI * 22).toFloat() * surprise * u * 0.012f else 0f
+        val appear = overshoot(seg(t, 0f, 0.12f))
+        val skin = Color.rgb(248, 204, 160)
+        val shirt = Color.rgb(68, 116, 184)
+        val beanie = Color.rgb(232, 104, 38)
 
-        val appear = overshoot(seg(t, 0f, 0.14f))
-        val soaked = t >= impactT
-        val stagger = if (soaked) -u * 0.02f * (1f - seg(t, impactT, impactT + 0.18f)) else 0f
-        val wobble = if (soaked) sin(t * PI * 16).toFloat() * 4f * (1f - seg(t, impactT, 0.95f)) else 0f
-
+        // Original cartoon boy in an orange beanie.
         c.save()
-        c.translate(cx + stagger, bodyY)
+        c.translate(cx + shake, bodyY)
         c.scale(appear, appear)
-        c.rotate(wobble)
-
-        val skinTone = Color.rgb(248, 204, 160)
-        val shirt = Color.rgb(226, 148, 52)
-        val hatColor = Color.rgb(58, 132, 196)
-
-        // legs + torso
         line(c, -u * 0.02f, u * 0.12f, -u * 0.045f, u * 0.24f, Color.rgb(56, 70, 110), u * 0.024f)
         line(c, u * 0.02f, u * 0.12f, u * 0.05f, u * 0.24f, Color.rgb(56, 70, 110), u * 0.024f)
         torso(c, 0f, -u * 0.1f, u * 0.13f, u * 0.22f, shirt)
-
-        // arms: relaxed, then flung up from the shock
-        if (soaked) {
-            line(c, -u * 0.06f, -u * 0.07f, -u * 0.13f, -u * 0.14f, skinTone, u * 0.017f)
-            line(c, u * 0.06f, -u * 0.07f, u * 0.13f, -u * 0.14f, skinTone, u * 0.017f)
+        if (popped) {
+            line(c, -u * 0.06f, -u * 0.07f, -u * 0.15f, -u * 0.21f, skin, u * 0.019f)
+            line(c, u * 0.06f, -u * 0.07f, u * 0.16f, -u * 0.19f, skin, u * 0.019f)
         } else {
-            line(c, -u * 0.06f, -u * 0.07f, -u * 0.1f, u * 0.02f, skinTone, u * 0.017f)
-            line(c, u * 0.06f, -u * 0.07f, u * 0.1f, u * 0.02f, skinTone, u * 0.017f)
+            line(c, -u * 0.06f, -u * 0.07f, -u * 0.12f, -u * 0.02f, skin, u * 0.018f)
+            line(c, u * 0.06f, -u * 0.07f, u * 0.15f, -u * 0.13f, skin, u * 0.018f)
         }
-
-        head(c, 0f, -u * 0.17f, headR, skinTone, Color.rgb(88, 58, 34), Hair.BEANIE,
-            if (soaked) Face.SHOCK else Face.GRIN,
-            lookX = if (soaked) 0f else 0.4f, lookY = if (soaked) 0f else -1f,
-            hatColor = hatColor)
-
-        // water dripping off his face
-        if (soaked) {
-            val k = seg(t, impactT, 1f)
-            for (i in 0 until 5) {
-                val phase = ((k * 2f + i * 0.2f) % 1f)
-                val x = -headR * 0.7f + i * headR * 0.35f
-                val y = -u * 0.19f + phase * u * 0.12f
-                oval(c, x - u * 0.007f, y - u * 0.012f, x + u * 0.007f, y + u * 0.012f,
-                    Color.rgb(96, 176, 240), (1f - phase) * 0.9f)
-            }
-        }
+        head(c, 0f, -u * 0.17f, headR, skin, Color.rgb(88, 58, 34), Hair.BEANIE,
+            if (popped) Face.SHOCK else Face.CALM,
+            lookX = if (popped) 0f else 0.55f, lookY = if (popped) 0f else -0.4f,
+            hatColor = beanie)
         c.restore()
 
-        // the balloon
-        val faceX = cx
-        val faceY = bodyY - u * 0.17f
-        if (t < impactT) {
-            val p = seg(t, 0f, impactT)
-            val bx = lerp(-u * 0.25f, faceX, easeIn(p))
-            val by = lerp(-u * 0.2f, faceY, p * p) - sin(p * PI.toFloat()) * u * 0.1f
-            val ballR = u * 0.085f
-            // motion trail
-            for (i in 1..3) {
-                fillCircle(c, bx - (1f - p) * i * u * 0.06f, by - (1f - p) * i * u * 0.03f,
-                    ballR * (0.5f - i * 0.1f), Color.argb(90, 110, 190, 250), 0.7f)
-            }
+        val bx = cx + u * 0.18f
+        val by = bodyY - u * 0.37f
+        if (!popped) {
+            // The boy blows into a blue balloon; it swells as the air sound rises.
+            val inflate = easeInOut(seg(t, 0.04f, popAt))
+            val pulse = if (inflate > 0.72f) sin(t * PI * 28).toFloat() * u * 0.008f else 0f
+            val ballR = lerp(u * 0.045f, u * 0.205f, inflate) + pulse
+            line(c, cx + u * 0.02f, bodyY - u * 0.21f, bx - ballR * 0.88f, by + ballR * 0.28f,
+                Color.rgb(246, 191, 154), u * 0.013f)
             fill.shader = RadialGradient(
-                bx - ballR * 0.3f, by - ballR * 0.35f, ballR * 1.6f,
-                intArrayOf(Color.rgb(150, 214, 255), Color.rgb(46, 132, 224)),
+                bx - ballR * 0.32f, by - ballR * 0.35f, ballR * 1.55f,
+                intArrayOf(Color.rgb(174, 222, 255), Color.rgb(38, 116, 220)),
                 null, Shader.TileMode.CLAMP
             )
-            c.drawCircle(bx, by, ballR, fill)
+            c.drawOval(RectF(bx - ballR * 0.78f, by - ballR, bx + ballR * 0.78f, by + ballR), fill)
             fill.shader = null
-            fillCircle(c, bx - ballR * 0.35f, by - ballR * 0.4f, ballR * 0.18f, Color.WHITE, 0.8f)
-            rrect(c, bx - ballR * 0.1f, by - ballR * 1.14f, bx + ballR * 0.1f, by - ballR * 0.95f,
-                ballR * 0.06f, Color.rgb(70, 150, 230))
-        } else {
-            // splash
-            val k = seg(t, impactT, impactT + 0.45f)
-            if (k < 1f) {
-                ring(c, faceX, faceY, u * 0.04f + k * u * 0.34f, Color.rgb(190, 230, 255), u * 0.01f, (1f - k) * 0.9f)
-                ring(c, faceX, faceY, u * 0.02f + k * u * 0.22f, Color.WHITE, u * 0.006f, (1f - k) * 0.7f)
-                for ((i, s) in sparks.withIndex()) {
-                    val local = ((k - s.delay * 0.4f) / 0.6f).coerceIn(0f, 1f)
-                    if (local <= 0f) continue
-                    val x = faceX + s.vx * u * 0.55f * local
-                    val y = faceY + s.vy * u * 0.55f * local + u * 0.5f * local * local
-                    fillCircle(c, x, y, u * s.size * 0.9f, Color.rgb(120, 196, 250), (1f - local) * 0.9f)
-                }
+            fillCircle(c, bx - ballR * 0.28f, by - ballR * 0.42f, ballR * 0.16f, Color.WHITE, 0.82f)
+            path.reset()
+            path.moveTo(bx - ballR * 0.12f, by + ballR * 0.92f)
+            path.lineTo(bx + ballR * 0.12f, by + ballR * 0.92f)
+            path.lineTo(bx, by + ballR * 1.2f)
+            path.close()
+            fillPath(c, path, Color.rgb(34, 94, 184))
+            // Small air puffs keep the inflation action readable without text.
+            if (inflate < 0.88f) {
+                val puff = sin(t * PI * 8f).toFloat()
+                fillCircle(c, cx + u * 0.11f, bodyY - u * 0.25f + puff * u * 0.012f,
+                    u * 0.012f, Color.rgb(210, 235, 255), 0.8f)
             }
-            // blue flash on impact
-            val flash = (1f - seg(t, impactT, impactT + 0.15f)) * 0.25f
-            fill.color = Color.argb((255 * flash).toInt(), 150, 210, 255)
-            c.drawRect(0f, 0f, width.toFloat(), height.toFloat(), fill)
+        } else {
+            // A sharp pop: burst rays and a few blue balloon fragments, not a water splash.
+            val burst = seg(t, popAt, popAt + 0.28f)
+            for (i in 0 until 12) {
+                val angle = (i * 30f + 8f) * (PI.toFloat() / 180f)
+                val inner = u * 0.04f + burst * u * 0.07f
+                val outer = u * (0.13f + burst * 0.28f)
+                line(c, bx + cos(angle) * inner, by + sin(angle) * inner,
+                    bx + cos(angle) * outer, by + sin(angle) * outer,
+                    if (i % 2 == 0) Color.rgb(255, 205, 72) else Color.rgb(120, 195, 255),
+                    u * 0.008f, 1f - burst * 0.75f)
+            }
+            for (i in 0 until 5) {
+                val angle = (i * 71f + 20f) * (PI.toFloat() / 180f)
+                val d = u * (0.12f + burst * 0.30f)
+                c.save()
+                c.translate(bx + cos(angle) * d, by + sin(angle) * d)
+                c.rotate(t * 240f + i * 65f)
+                path.reset()
+                path.moveTo(-u * 0.025f, -u * 0.012f)
+                path.lineTo(u * 0.022f, -u * 0.018f)
+                path.lineTo(u * 0.008f, u * 0.025f)
+                path.close()
+                fillPath(c, path, Color.rgb(55, 142, 234), 1f - burst * 0.65f)
+                c.restore()
+            }
         }
     }
 
@@ -1484,6 +1529,70 @@ class WinkOverlayView @JvmOverloads constructor(
             val nx = cx + (if (i % 2 == 0) -1 else 1) * u * (0.17f + i * 0.02f) + sin(local * PI.toFloat() * 3f) * u * 0.02f
             val ny = groundY - u * 0.28f - local * u * 0.3f
             note(c, nx, ny, u * 0.05f, Color.rgb(90, 70, 130), (1f - local) * 0.85f)
+        }
+    }
+
+    // A second dance, based on the reference's side-stepping beanie-wearing boy.
+    private fun drawDance(c: Canvas, t: Float) {
+        val u = min(width, height).toFloat()
+        val cx = width / 2f
+        val groundY = height * 0.80f
+        val appear = overshoot(seg(t, 0f, 0.12f))
+        val step = sin(t * PI * 4f).toFloat()
+        val hop = abs(sin(t * PI * 4f)).toFloat()
+        val x = cx + sin(t * PI * 2f).toFloat() * u * 0.085f
+        val y = groundY - hop * u * 0.035f
+        val headR = u * 0.078f
+        val shirt = Color.rgb(242, 206, 45)
+        val skin = Color.rgb(248, 204, 160)
+        val dark = Color.rgb(54, 48, 58)
+
+        c.save()
+        c.translate(x, y)
+        c.scale(appear, appear)
+        c.rotate(step * 7f)
+        // Dancing side-step legs.
+        line(c, -u * 0.025f, -u * 0.10f, -u * 0.045f - step * u * 0.055f,
+            -u * 0.015f, Color.rgb(55, 76, 132), u * 0.024f)
+        line(c, u * 0.025f, -u * 0.10f, u * 0.045f + step * u * 0.055f,
+            -u * 0.015f, Color.rgb(55, 76, 132), u * 0.024f)
+        oval(c, -u * 0.085f - step * u * 0.055f, -u * 0.02f,
+            -u * 0.015f - step * u * 0.055f, u * 0.012f, dark)
+        oval(c, u * 0.015f + step * u * 0.055f, -u * 0.02f,
+            u * 0.085f + step * u * 0.055f, u * 0.012f, dark)
+
+        torso(c, 0f, -u * 0.34f, u * 0.15f, u * 0.25f, shirt)
+        val armSwing = sin(t * PI * 4f + PI.toFloat() / 2f).toFloat()
+        line(c, -u * 0.065f, -u * 0.29f, -u * 0.15f, -u * 0.20f - armSwing * u * 0.10f,
+            skin, u * 0.018f)
+        line(c, u * 0.065f, -u * 0.29f, u * 0.15f, -u * 0.20f + armSwing * u * 0.10f,
+            skin, u * 0.018f)
+        fillCircle(c, -u * 0.15f, -u * 0.20f - armSwing * u * 0.10f, u * 0.018f, skin)
+        fillCircle(c, u * 0.15f, -u * 0.20f + armSwing * u * 0.10f, u * 0.018f, skin)
+
+        // Five-point star graphic on the shirt.
+        path.reset()
+        for (i in 0 until 10) {
+            val a = (-90f + i * 36f) * (PI.toFloat() / 180f)
+            val r = if (i % 2 == 0) u * 0.043f else u * 0.019f
+            val px = cos(a) * r
+            val py = -u * 0.245f + sin(a) * r
+            if (i == 0) path.moveTo(px, py) else path.lineTo(px, py)
+        }
+        path.close()
+        fillPath(c, path, Color.rgb(255, 248, 190))
+
+        head(c, 0f, -u * 0.43f, headR, skin, Color.rgb(92, 54, 36), Hair.BEANIE,
+            Face.GRIN, lookX = step * 0.3f, hatColor = Color.rgb(196, 36, 48))
+        c.restore()
+
+        // Floating notes imply an upbeat original electronic dance loop.
+        for (i in 0 until 4) {
+            val phase = ((t * 0.9f + i * 0.25f) % 1f)
+            val side = if (i % 2 == 0) -1f else 1f
+            val nx = x + side * u * (0.19f + i * 0.02f) + sin(phase * PI.toFloat() * 2f) * u * 0.02f
+            val ny = groundY - u * (0.25f + phase * 0.40f)
+            note(c, nx, ny, u * 0.045f, Color.rgb(74, 70, 150), (1f - phase) * 0.9f)
         }
     }
 

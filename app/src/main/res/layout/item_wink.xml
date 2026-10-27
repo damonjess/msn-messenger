@@ -20,6 +20,14 @@
         android:paddingEnd="22dp"
         android:paddingBottom="10dp">
 
+        <ImageView
+            android:id="@+id/ivWinkArtwork"
+            android:layout_width="112dp"
+            android:layout_height="112dp"
+            android:contentDescription="@string/winks_title"
+            android:scaleType="fitCenter"
+            android:visibility="gone" />
+
         <TextView
             android:id="@+id/tvWinkEmoji"
             android:layout_width="wrap_content"

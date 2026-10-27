@@ -7,8 +7,8 @@ package com.limpe.tengerium.ui
 data class Wink(val id: String, val emoji: String, val name: String)
 
 /**
- * The thirteen winks that shipped with MSN Messenger 7, in the same order.
- * Each id has a matching animation in [WinkOverlayView] and a sound effect
+ * An MSN Messenger 7-inspired set of Winks, with original scene artwork.
+ * Each id has a matching animation in [WinkOverlayView] and, where available, a sound effect
  * in [com.limpe.tengerium.util.WinkSoundPlayer].
  */
 object WinkCatalog {
@@ -28,17 +28,19 @@ object WinkCatalog {
     const val FROG = "frog"
     const val HEART = "heart"
     const val IDEA = "idea"
+    const val DANCE = "dance"
 
     val all = listOf(
         Wink(GUITAR, "\uD83C\uDFB8", "Guitar Smash"),
         Wink(KISS, "\uD83D\uDC8B", "Kiss"),
-        Wink(LAUGH, "\uD83D\uDE02", "Laughing Woman"),
+        Wink(LAUGH, "\uD83D\uDE02", "Hysterical Laugh"),
         Wink(KNOCK, "\u270A", "Knocking"),
-        Wink(SLAP, "\uD83D\uDE03", "Smiley Slap Dance"),
-        Wink(PEEK, "\uD83D\uDE1C", "Boy Peeking"),
-        Wink(ICECREAM, "\uD83C\uDF66", "Dropped Ice Cream"),
-        Wink(BALLOON, "\uD83C\uDF88", "Water Balloon"),
+        Wink(SLAP, "\uD83D\uDE03", "Cheering Smiley"),
+        Wink(PEEK, "\uD83D\uDE1C", "Peeking Character"),
+        Wink(ICECREAM, "\uD83C\uDF66", "Sad Boy: Dropped Ice Cream"),
+        Wink(BALLOON, "\uD83C\uDF88", "Balloon Pop"),
         Wink(PIG, "\uD83D\uDC37", "Dancing Pig"),
+        Wink(DANCE, "\uD83D\uDC83", "Dancing Boy"),
         Wink(UFO, "\uD83D\uDEF8", "UFO"),
         Wink(FROG, "\uD83D\uDC38", "Frog Eating Fly"),
         Wink(HEART, "\uD83D\uDC96", "Sparkling Heart"),
@@ -64,6 +66,9 @@ object WinkCatalog {
     )
 
     val fallback = Wink("wink", "\uD83D\uDE09", "Wink")
+
+    /** The same original vector scene is previewed in the picker and in chat. */
+    fun artworkRes(id: String): Int? = null
 
     fun byId(id: String?): Wink? {
         if (id == null) return null

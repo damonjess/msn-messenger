@@ -99,6 +99,7 @@ class PoolRulesTest {
         val rack = PoolTable.rack()
         val shot = PoolTable.shoot(rack, 0f, 1f)
         assertTrue("the cue ball should travel", shot.frames.size > 2)
+        assertTrue("a full-power shot must not create an excessively long animation", shot.frames.size <= 302)
         val moved = shot.final.count { ball ->
             val before = rack.firstOrNull { it.id == ball.id } ?: return@count true
             kotlin.math.hypot(ball.x - before.x, ball.y - before.y) > 20f

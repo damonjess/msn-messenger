@@ -57,6 +57,7 @@ class PoolTableView @JvmOverloads constructor(
     private val railPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#5D3A1A") }
     private val pocketPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#05080C") }
     private val whitePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE }
+    private val ballPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val numberPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.parseColor("#101010")
         textAlign = Paint.Align.CENTER
@@ -105,6 +106,11 @@ class PoolTableView @JvmOverloads constructor(
         playback = emptyList()
         onPlaybackEnd = null
         interactive = false
+    }
+
+    override fun onDetachedFromWindow() {
+        stopPlayback()
+        super.onDetachedFromWindow()
     }
 
     val isPlaying: Boolean get() = playback.isNotEmpty()
@@ -171,8 +177,8 @@ class PoolTableView @JvmOverloads constructor(
         }
 
         // One colour per player: yellow for the low balls, red for the high ones.
-        val facePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = ballColor }
-        canvas.drawCircle(cx, cy, radius, facePaint)
+        ballPaint.color = ballColor
+        canvas.drawCircle(cx, cy, radius, ballPaint)
 
         // Every object ball carries its number, including the black 8.
         canvas.drawCircle(cx, cy, radius * 0.44f, whitePaint)

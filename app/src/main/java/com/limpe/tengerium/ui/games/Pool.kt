@@ -59,6 +59,10 @@ object PoolTable {
     private const val POCKET_RADIUS = 32f
     private const val HEAD_X = 250f
     private const val RACK_X = 700f
+    private const val ROLLING_FRICTION = 0.992f
+    private const val REST_SPEED = 6f
+    private const val MAX_SIMULATION_STEPS = 1_200
+    private const val FRAME_INTERVAL_STEPS = 4
 
     // Inset a little from the corners so a pocket reads as a pocket instead of being clipped.
     private val POCKETS = listOf(
@@ -146,19 +150,20 @@ object PoolTable {
         velocity[CUE_ID] = floatArrayOf((cos(radians) * speed).toFloat(), (sin(radians) * speed).toFloat())
 
         val stepSeconds = 1f / 240f
-        val friction = 0.9988f
-        val stopSpeed = 6f
         var steps = 0
         var cuePotted = false
 
         frames.add(working.toList())
-        while (steps < 6_000) {
+        while (steps < MAX_SIMULATION_STEPS) {
             steps++
-            var moving = false
             for (ball in working.toList()) {
                 val v = velocity[ball.id] ?: continue
                 if (v[0] == 0f && v[1] == 0f) continue
-                moving = true
+                if (hypot(v[0], v[1]) <= REST_SPEED) {
+                    v[0] = 0f
+                    v[1] = 0f
+                    continue
+                }
                 val nextX = ball.x + v[0] * stepSeconds
                 val nextY = ball.y + v[1] * stepSeconds
                 var placed = PoolBall(ball.id, nextX, nextY)
@@ -186,14 +191,23 @@ object PoolTable {
                     placed = placed.copy(y = HEIGHT - RADIUS)
                     vy = -abs(vy) * 0.82f
                 }
-                velocity[ball.id] = floatArrayOf(vx * friction, vy * friction)
+                velocity[ball.id] = floatArrayOf(vx * ROLLING_FRICTION, vy * ROLLING_FRICTION)
                 val index = working.indexOfFirst { it.id == ball.id }
                 if (index >= 0) working[index] = placed
             }
 
             collide(working, velocity)
+            var moving = false
+            velocity.values.forEach { v ->
+                if (hypot(v[0], v[1]) <= REST_SPEED) {
+                    v[0] = 0f
+                    v[1] = 0f
+                } else {
+                    moving = true
+                }
+            }
             if (!moving) break
-            if (steps % 4 == 0) frames.add(working.toList())
+            if (steps % FRAME_INTERVAL_STEPS == 0) frames.add(working.toList())
         }
 
         frames.add(working.toList())

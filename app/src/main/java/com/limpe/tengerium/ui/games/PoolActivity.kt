@@ -128,6 +128,9 @@ class PoolActivity : AppCompatActivity() {
                     return
                 }
                 binding.tvGamePeer.text = state.peer
+                if (!binding.poolTable.isPlaying) {
+                    state.finalPoolTable?.let { binding.poolTable.balls = PoolTable.decode(it) }
+                }
                 binding.poolTable.interactive = false
                 binding.btnShoot.isEnabled = false
                 binding.powerBar.isEnabled = false

@@ -278,7 +278,7 @@ internal object WinkSynth {
 
     private val supported = setOf(
         "guitar", "kiss", "laugh", "knock", "slap", "peek", "icecream",
-        "balloon", "pig", "ufo", "frog", "heart", "idea"
+        "balloon", "pig", "dance", "ufo", "frog", "heart", "idea"
     )
 
     fun supports(winkId: String): Boolean = winkId in supported
@@ -293,6 +293,7 @@ internal object WinkSynth {
         "icecream" -> iceCream()
         "balloon" -> balloon()
         "pig" -> pig()
+        "dance" -> dance()
         "ufo" -> ufo()
         "frog" -> frog()
         "heart" -> heart()
@@ -353,9 +354,9 @@ internal object WinkSynth {
 
     /** A screeching, breathless cackle that runs out of air. */
     private fun laugh(): WinBuf {
-        val b = WinBuf(3.5f)
-        for (i in 0 until 11) {
-            val at = 0.35f + i * 0.21f
+        val b = WinBuf(6.8f)
+        for (i in 0 until 22) {
+            val at = 0.28f + i * 0.26f
             val f = 780f - i * 24f
             b.tone(
                 at, 0.17f, f, f * 0.78f, amp = 0.3f, wave = Wave.SAW,
@@ -369,7 +370,7 @@ internal object WinkSynth {
             b.noise(at, 0.12f, 0.12f, 4200f, 1800f, attack = 0.005f, seed = 30 + i)
         }
         b.noise(
-            2.75f, 0.7f, 0.16f, 1800f, 700f, attack = 0.08f, release = 0.3f,
+            6.0f, 0.65f, 0.16f, 1800f, 700f, attack = 0.08f, release = 0.3f,
             amHz = 9f, amDepth = 0.6f, seed = 44
         )
         return b
@@ -378,7 +379,7 @@ internal object WinkSynth {
     /** Four heavy thumps, as if someone is pounding on the monitor. */
     private fun knock(): WinBuf {
         val b = WinBuf(2.3f)
-        for ((i, at) in floatArrayOf(0.12f, 0.70f, 1.27f, 1.85f).withIndex()) {
+        for ((i, at) in floatArrayOf(0.15f, 0.91f, 1.67f).withIndex()) {
             b.tone(
                 at, 0.28f, 95f, 48f + i * 2f, amp = 0.8f, wave = Wave.SINE,
                 attack = 0.002f, release = 0.2f, decay = 0.5f
@@ -396,11 +397,11 @@ internal object WinkSynth {
         return b
     }
 
-    /** Bouncy squeaks timed to the smiley's claps and thigh slaps, ending in a pop. */
+    /** Bright applause-like pulses for the cheering smiley conducting a crowd. */
     private fun slap(): WinBuf {
-        val b = WinBuf(3.1f)
-        for (i in 0 until 6) {
-            val at = 0.3f + i * 0.32f
+        val b = WinBuf(5.8f)
+        for (i in 0 until 14) {
+            val at = 0.25f + i * 0.36f
             if (i % 2 == 0) {
                 b.noise(at, 0.06f, 0.65f, 3800f, 1400f, attack = 0.001f, release = 0.04f, seed = 70 + i)
                 b.tone(
@@ -416,8 +417,8 @@ internal object WinkSynth {
                 attack = 0.01f, release = 0.05f, vibratoHz = 30f, vibratoDepth = 0.05f
             )
         }
-        b.tone(2.75f, 0.12f, 1200f, 240f, amp = 0.35f, wave = Wave.SQUARE, attack = 0.002f, release = 0.05f)
-        b.noise(2.75f, 0.05f, 0.4f, 5000f, 1000f, seed = 90)
+        b.tone(5.15f, 0.32f, 1200f, 240f, amp = 0.3f, wave = Wave.SQUARE, attack = 0.002f, release = 0.12f)
+        b.noise(5.15f, 0.26f, 0.45f, 5000f, 1000f, seed = 90)
         return b
     }
 
@@ -472,22 +473,46 @@ internal object WinkSynth {
         return b
     }
 
-    /** A tense whistle, then a huge wet splash of water. */
+    /** Rising breath, a sharp balloon pop, and a few soft falling fragments. */
     private fun balloon(): WinBuf {
-        val b = WinBuf(2.6f)
+        val b = WinBuf(5.4f)
         b.tone(
-            0.1f, 1.35f, 700f, 360f, amp = 0.16f, wave = Wave.SINE,
-            attack = 0.05f, release = 0.08f, vibratoHz = 7f, vibratoDepth = 0.04f
+            0.2f, 3.9f, 420f, 980f, amp = 0.13f, wave = Wave.SINE,
+            attack = 0.08f, release = 0.12f, vibratoHz = 8f, vibratoDepth = 0.05f
         )
-        b.noise(0.1f, 1.35f, 0.09f, 700f, 2800f, attack = 0.08f, release = 0.1f, seed = 120)
-        // burst
-        b.noise(1.54f, 0.45f, 0.9f, 4200f, 500f, attack = 0.001f, release = 0.12f, decay = 0.5f, seed = 121)
-        b.tone(1.54f, 0.28f, 190f, 60f, amp = 0.55f, wave = Wave.SINE, attack = 0.001f, release = 0.15f)
-        b.noise(1.56f, 0.2f, 0.5f, 6000f, 2500f, attack = 0.001f, release = 0.1f, seed = 122)
+        b.noise(0.2f, 3.9f, 0.06f, 500f, 2200f, attack = 0.08f, release = 0.1f, seed = 120)
+        val popAt = 4.12f
+        b.noise(popAt, 0.42f, 0.9f, 5200f, 550f, attack = 0.001f, release = 0.12f, decay = 0.6f, seed = 121)
+        b.tone(popAt, 0.28f, 230f, 65f, amp = 0.5f, wave = Wave.SINE, attack = 0.001f, release = 0.15f)
+        b.noise(popAt + 0.02f, 0.2f, 0.45f, 6000f, 2500f, attack = 0.001f, release = 0.1f, seed = 122)
         for (i in 0 until 7) {
-            val at = 1.62f + i * 0.08f
+            val at = popAt + 0.08f + i * 0.12f
             val f = 900f + (i * 137) % 500
             b.tone(at, 0.09f, f, f * 0.6f, amp = 0.16f, wave = Wave.SINE, attack = 0.002f, release = 0.06f)
+        }
+        return b
+    }
+
+    /** A bright, original retro-electronic dance loop for the beanie-wearing boy. */
+    private fun dance(): WinBuf {
+        val b = WinBuf(5.9f)
+        val melody = floatArrayOf(392f, 523f, 659f, 523f, 440f, 587f, 698f, 587f)
+        for (step in 0 until 24) {
+            val at = 0.08f + step * 0.23f
+            if (step % 4 == 0) {
+                b.tone(at, 0.18f, 110f, 48f, amp = 0.5f, wave = Wave.SINE,
+                    attack = 0.002f, release = 0.12f)
+                b.tone(at, 0.14f, if (step % 8 == 0) 110f else 82f,
+                    if (step % 8 == 0) 110f else 82f, amp = 0.18f, wave = Wave.SQUARE,
+                    attack = 0.004f, release = 0.08f)
+            }
+            if (step % 2 == 1) {
+                b.noise(at, 0.045f, 0.16f, 8200f, 4600f, attack = 0.001f,
+                    release = 0.03f, seed = 170 + step)
+            }
+            val f = melody[step % melody.size]
+            b.tone(at, 0.16f, f, f * 1.01f, amp = 0.11f, wave = Wave.SQUARE,
+                attack = 0.004f, release = 0.07f)
         }
         return b
     }

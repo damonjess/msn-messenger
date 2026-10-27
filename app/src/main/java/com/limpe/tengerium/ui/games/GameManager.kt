@@ -83,7 +83,8 @@ object GameManager {
             val kind: GameKind,
             val myScore: Int,
             val theirScore: Int,
-            val outcome: Outcome
+            val outcome: Outcome,
+            val finalPoolTable: String? = null
         ) : State()
 
         data class Finished(val peer: String?, val reason: EndReason) : State()
@@ -574,7 +575,8 @@ object GameManager {
             kind = current.kind,
             myScore = current.myScore,
             theirScore = current.theirScore,
-            outcome = outcome
+            outcome = outcome,
+            finalPoolTable = if (current.kind == GameKind.POOL) current.poolTable else null
         )
     }
 
